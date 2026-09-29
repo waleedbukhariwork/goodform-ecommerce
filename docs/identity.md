@@ -7,12 +7,12 @@ Better Auth 1.7.6 owns `/api/auth/*` through its official Node handler on Expres
 The implemented Express/Nest order is:
 
 1. Request ID and safe request-completion logging.
-2. Raw Better Auth route. It can read the untouched request stream. Session lookup enforces a 24-hour absolute age; a new sign-in revokes any existing session before Better Auth creates a new one.
+2. Raw Better Auth route and separate Stripe webhook route. Both read the untouched request stream; the webhook verifies its signature before handling an event. Better Auth can read the untouched request stream. Session lookup enforces a 24-hour absolute age; a new sign-in revokes any existing session before Better Auth creates a new one.
 3. Mutation Origin check for Nest application routes. Requests require the exact configured `PUBLIC_ORIGIN`; a mismatch or missing Origin gets 403 problem+json.
 4. Session guard for Nest routes. Only GET/HEAD health (`live`, `ready`) and public product list/detail are allowed anonymously. All other Nest paths require a valid server-side session. Private responses use `Cache-Control: private, no-store`.
 5. Bounded JSON parser, then Nest routes and DTO validation.
 
-A signed Stripe webhook raw route will be inserted at step 2 in the payments phase. It must remain before the Origin check and parser; its signature will be checked by the official Stripe SDK. The auth route has Better Auth's own origin checks. No session cookie is set on public catalog responses.
+The Stripe webhook path is `/api/stripe/webhook`. It is exempt from browser Origin checks and the session guard because the official Stripe SDK verifies its signature over raw bytes. An invalid signature returns 400; a valid local synthetic event uses database event-ID deduplication. Real provider delivery remains unverified without Stripe account keys. The auth route has Better Auth's own origin checks. No session cookie is set on public catalog responses.
 
 The session cookie is host-only, HttpOnly, SameSite=Lax, Path=/, and Secure when `PUBLIC_ORIGIN` is HTTPS. Better Auth's database session expiry is refreshed with one hour of idle validity and a five-minute update threshold; the middleware also revokes a session once its creation time exceeds 24 hours. Signout deletes the server-side session. No cookie cache or stateless session mode is enabled. Better Auth's PostgreSQL rate-limit table stores sign-in and sign-up counters across API processes, with five attempts per minute for each endpoint and client key. Its built-in credential path performs a password hash on an unknown account and uses the same 401 code for unknown email and wrong password.
 

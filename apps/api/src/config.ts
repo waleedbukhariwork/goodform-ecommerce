@@ -38,6 +38,10 @@ class ApiEnvironment {
   @IsOptional() @IsString() SESSION_KEY_FILE?: string;
   @IsString() SESSION_SECRET!: string;
   @IsOptional() @IsString() PUBLIC_ORIGIN?: string;
+  @IsOptional() @IsString() STRIPE_SECRET_KEY_FILE?: string;
+  @IsOptional() @IsString() STRIPE_WEBHOOK_SECRET_FILE?: string;
+  @IsOptional() @IsString() STRIPE_SECRET_KEY?: string;
+  @IsOptional() @IsString() STRIPE_WEBHOOK_SECRET?: string;
   @IsOptional() @Matches(/^[a-z][a-z0-9_-]{2,63}$/) MEDIA_NAMESPACE?: string;
 }
 
@@ -76,6 +80,8 @@ export function apiConfig(environment: NodeJS.ProcessEnv = process.env) {
       environment.PUBLIC_ORIGIN ??
       (appEnv === "dev" ? "http://127.0.0.1:8080" : undefined),
     MEDIA_NAMESPACE: environment.MEDIA_NAMESPACE,
+    STRIPE_SECRET_KEY_FILE: environment.STRIPE_SECRET_KEY_FILE,
+    STRIPE_WEBHOOK_SECRET_FILE: environment.STRIPE_WEBHOOK_SECRET_FILE,
   });
   let databaseValid = false;
   try {
@@ -109,6 +115,29 @@ export function apiConfig(environment: NodeJS.ProcessEnv = process.env) {
       databaseValid = false;
     }
   }
+  let stripeValid = true;
+  try {
+    if (config.STRIPE_SECRET_KEY_FILE) {
+      const key = readFileSync(config.STRIPE_SECRET_KEY_FILE, "utf8").trim();
+      stripeValid = /^(sk|rk)_test_[A-Za-z0-9]+$/.test(key);
+      if (stripeValid) config.STRIPE_SECRET_KEY = key;
+    }
+    if (config.STRIPE_WEBHOOK_SECRET_FILE) {
+      const secret = readFileSync(
+        config.STRIPE_WEBHOOK_SECRET_FILE,
+        "utf8",
+      ).trim();
+      stripeValid = stripeValid && /^whsec_[A-Za-z0-9]+$/.test(secret);
+      if (stripeValid) config.STRIPE_WEBHOOK_SECRET = secret;
+    }
+  } catch {
+    stripeValid = false;
+  }
+  if (
+    appEnv !== "dev" &&
+    Boolean(config.STRIPE_SECRET_KEY) !== Boolean(config.STRIPE_WEBHOOK_SECRET)
+  )
+    stripeValid = false;
   let publicOriginValid = true;
   if (config.PUBLIC_ORIGIN) {
     try {
@@ -151,6 +180,7 @@ export function apiConfig(environment: NodeJS.ProcessEnv = process.env) {
     Boolean(environment.DATABASE_URL && environment.DATABASE_URL_FILE) ||
     !endpointValid ||
     !publicOriginValid ||
+    !stripeValid ||
     !namespaceValid ||
     !sessionKeyValid ||
     (appEnv !== "dev" && config.NODE_ENV !== "production") ||

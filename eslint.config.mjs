@@ -100,6 +100,44 @@ export default tseslint.config(
     },
   },
   {
+    files: ["apps/api/src/modules/payments/**/*.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            "**/orders/application/**",
+            "**/orders/infrastructure/**",
+            "**/orders/presentation/**",
+            "**/inventory/application/**",
+            "**/inventory/infrastructure/**",
+            "**/inventory/presentation/**",
+            "**/carts/application/**",
+            "**/carts/infrastructure/**",
+            "**/carts/presentation/**",
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: [
+      "apps/api/src/modules/{catalog,identity,carts,inventory,orders}/**/*.ts",
+    ],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            "**/payments/application/**",
+            "**/payments/infrastructure/**",
+            "**/payments/presentation/**",
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ["apps/api/src/modules/*/domain/**/*.ts"],
     rules: {
       "no-restricted-imports": [

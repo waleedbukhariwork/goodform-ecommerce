@@ -22,7 +22,7 @@ printf '%s\n' "$DEPLOY_KNOWN_HOSTS" >"$known_hosts"
 ssh_opts=(-i "$key_file" -o "UserKnownHostsFile=$known_hosts" -o StrictHostKeyChecking=yes -o BatchMode=yes)
 remote="$DEPLOY_USER@$DEPLOY_HOST"
 ssh "${ssh_opts[@]}" "$remote" "mkdir -p '$DEPLOY_ROOT/infra' '$DEPLOY_ROOT/scripts/deploy'"
-scp "${ssh_opts[@]}" infra/compose.release.yml infra/Caddyfile "$remote:$DEPLOY_ROOT/infra/"
+scp "${ssh_opts[@]}" infra/compose.release.yml infra/compose.stripe-test.yml infra/Caddyfile "$remote:$DEPLOY_ROOT/infra/"
 scp "${ssh_opts[@]}" scripts/deploy/release.sh "$remote:$DEPLOY_ROOT/scripts/deploy/"
 ssh "${ssh_opts[@]}" "$remote" "bash '$DEPLOY_ROOT/scripts/deploy/release.sh' dry-run '$DEPLOY_ENV_FILE' '$api_image' '$web_image' '$release_sha'"
 if [[ $mode == deploy ]]; then

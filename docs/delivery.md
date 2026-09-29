@@ -90,3 +90,11 @@ before production can be called verified.
 A workflow file or local simulation is not proof of remote CI or deployment.
 Record the actual run URLs, digest pair, dashboard observation and HTTPS smoke
 results in the DELIVERY review after credentials and resources are available.
+
+## Commerce release extension
+
+The API middleware order is request-ID correlation, Better Auth and signed Stripe raw routes, browser mutation Origin check, default-deny session guard, bounded JSON parser, then Nest routes. Raw routes must precede the parser because Better Auth consumes its own body and Stripe verifies an exact byte sequence. Public catalog and health reads are the only anonymous Nest allowlist; new application routes are private by default. The API uses a configured public origin, never a request Host header, for trust and Stripe return URLs.
+
+Checkout uses an explicit PostgreSQL transaction handle across cart/catalog reads, reservation consumption, and order snapshot insertion. Stripe session creation happens after commit because an external API cannot roll back with PostgreSQL. The attempt row reserves the client key with a unique constraint before that call; uncertain calls are not retried automatically. Webhooks verify raw signatures, reject live-mode events, deduplicate event IDs with a primary key, retrieve current Stripe state, and apply order transitions transactionally. The owner-only reconciliation route can recover a missed webhook once the provider session ID is stored. An attempt without a stored provider session ID needs operator review of Stripe test-mode records before any stock or order correction. See `docs/commerce.md` for the exact operation and observed boundary.
+
+The optional `infra/compose.stripe-test.yml` overlay mounts separate Stripe test key and webhook secret files only when the private release environment sets `ENABLE_STRIPE_TEST=true`. The base Compose release remains startable without Stripe credentials and returns a safe 503 for checkout. No remote Stripe account, webhook delivery, or HTTPS payment journey has been verified in this checkout.

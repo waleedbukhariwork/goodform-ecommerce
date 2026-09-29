@@ -1,6 +1,5 @@
 import { Module } from "@nestjs/common";
 import { Database } from "../../db/database.js";
-import { TransactionRunner } from "../../db/transaction-runner.js";
 import { CartsModule } from "../carts/index.js";
 import { InventoryModule } from "../inventory/index.js";
 import { OrdersService } from "./application/orders.service.js";
@@ -10,7 +9,7 @@ import { OrdersController } from "./presentation/orders.controller.js";
 @Module({
   imports: [CartsModule, InventoryModule],
   controllers: [OrdersController],
-  providers: [Database, TransactionRunner, OrdersRepository, OrdersService],
+  providers: [Database, OrdersRepository, OrdersService],
   exports: [OrdersService],
 })
 export class OrdersModule {}

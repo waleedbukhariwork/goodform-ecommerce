@@ -2,12 +2,14 @@ import "reflect-metadata";
 import { NestFactory } from "@nestjs/core";
 import {
   BadRequestException,
+  HttpException,
   ValidationPipe,
   type ValidationError,
 } from "@nestjs/common";
 import { AppModule } from "./app.module.js";
-import { json, type Express, type Request, type Response } from "express";
+import { json, raw, type Express, type Request, type Response } from "express";
 import { toNodeHandler } from "better-auth/node";
+import { PaymentsService } from "./modules/payments/index.js";
 import { IdentityService } from "./modules/identity/index.js";
 import {
   originCheck,
@@ -80,6 +82,49 @@ export async function bootstrap() {
     },
   );
   expressApp.all("/api/auth/*splat", toNodeHandler(identity.auth));
+  const payments = app.get(PaymentsService);
+  expressApp.post(
+    "/api/stripe/webhook",
+    raw({ type: "application/json", limit: "256kb" }),
+    async (request: Request & { requestId?: string }, response: Response) => {
+      response.setHeader("Cache-Control", "private, no-store");
+      try {
+        if (!Buffer.isBuffer(request.body))
+          throw new BadRequestException("Invalid webhook body");
+        const signature = request.headers["stripe-signature"];
+        const event = payments.verifyWebhook(
+          request.body,
+          typeof signature === "string" ? signature : undefined,
+        );
+        const result = await payments.handleWebhook(event);
+        response
+          .status(200)
+          .json({ received: true, duplicate: result.duplicate });
+      } catch (error) {
+        const status = error instanceof HttpException ? error.getStatus() : 500;
+        response
+          .status(status)
+          .type("application/problem+json")
+          .json({
+            type: "about:blank",
+            title:
+              status === 400
+                ? "Bad Request"
+                : status === 503
+                  ? "Service Unavailable"
+                  : "Internal Server Error",
+            status,
+            detail:
+              status === 400
+                ? "Invalid webhook"
+                : "Webhook processing unavailable",
+            instance: request.path,
+            code: status === 400 ? "INVALID_WEBHOOK" : "UNAVAILABLE",
+            requestId: request.requestId,
+          });
+      }
+    },
+  );
   app.use(originCheck(config));
   app.use(sessionGuard(identity));
   app.use(json({ limit: "32kb" }));

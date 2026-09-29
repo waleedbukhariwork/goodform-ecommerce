@@ -44,6 +44,18 @@ export class OrdersRepository {
     return order.id;
   }
 
+  async byId(transaction: CommerceTransaction, id: string) {
+    return (
+      (
+        await transaction
+          .select()
+          .from(orders)
+          .where(eq(orders.id, id))
+          .limit(1)
+      )[0] ?? null
+    );
+  }
+
   async byOwner(userId: string, id: string) {
     const order = (
       await this.db.client

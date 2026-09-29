@@ -61,6 +61,13 @@ export class InventoryService {
     }
   }
 
+  restoreFailedCheckout(
+    transaction: CommerceTransaction,
+    reservationId: string,
+  ) {
+    return this.repository.restoreConsumed(transaction, reservationId);
+  }
+
   async detail(ownerId: string, id: string) {
     const result = await this.repository.byOwner(ownerId, id);
     if (!result) throw new NotFoundException("Reservation not found");

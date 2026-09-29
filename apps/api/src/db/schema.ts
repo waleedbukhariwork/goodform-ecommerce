@@ -226,3 +226,50 @@ export const orderLines = pgTable(
     check("order_line_total_nonnegative", sql`${table.lineTotalCents} >= 0`),
   ],
 );
+
+export const checkoutAttempts = pgTable(
+  "checkout_attempts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    idempotencyKey: varchar("idempotency_key", { length: 100 }).notNull(),
+    reservationId: uuid("reservation_id")
+      .notNull()
+      .references(() => reservations.id),
+    orderId: uuid("order_id")
+      .unique()
+      .references(() => orders.id),
+    stripeSessionId: text("stripe_session_id").unique(),
+    checkoutUrl: text("checkout_url"),
+    status: varchar("status", { length: 16 }).notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("checkout_user_key").on(table.userId, table.idempotencyKey),
+    check(
+      "checkout_attempt_status_valid",
+      sql`${table.status} IN ('started', 'ready', 'uncertain')`,
+    ),
+  ],
+);
+
+export const processedStripeEvents = pgTable("processed_stripe_events", {
+  eventId: text("event_id").primaryKey(),
+  eventType: text("event_type").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const checkoutRateLimits = pgTable(
+  "checkout_rate_limits",
+  {
+    userId: text("user_id")
+      .primaryKey()
+      .references(() => user.id, { onDelete: "cascade" }),
+    windowStart: timestamp("window_start").notNull(),
+    count: integer("count").notNull(),
+  },
+  (table) => [check("checkout_rate_count_positive", sql`${table.count} >= 1`)],
+);

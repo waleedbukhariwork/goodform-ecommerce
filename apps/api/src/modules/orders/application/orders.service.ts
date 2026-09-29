@@ -1,8 +1,5 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import {
-  TransactionRunner,
-  type CommerceTransaction,
-} from "../../../db/transaction-runner.js";
+import type { CommerceTransaction } from "../../../db/transaction-runner.js";
 import { CartService } from "../../carts/index.js";
 import { InventoryService } from "../../inventory/index.js";
 import type { OrderStatus } from "../domain/order-status.js";
@@ -11,29 +8,34 @@ import { OrdersRepository } from "../infrastructure/orders.repository.js";
 @Injectable()
 export class OrdersService {
   constructor(
-    private readonly runner: TransactionRunner,
     private readonly carts: CartService,
     private readonly inventory: InventoryService,
     private readonly repository: OrdersRepository,
   ) {}
 
-  async prepare(ownerId: string, reservationId: string) {
-    const id = await this.runner.run(async (transaction) => {
-      const cart = await this.carts.linesForCheckout(transaction, ownerId);
-      await this.inventory.consumeForCheckout(
-        transaction,
-        ownerId,
-        reservationId,
-        cart.lines,
-      );
-      return this.repository.createPending(
-        transaction,
-        ownerId,
-        reservationId,
-        cart,
-      );
-    });
-    return this.detail(ownerId, id);
+  async prepareInTransaction(
+    transaction: CommerceTransaction,
+    ownerId: string,
+    reservationId: string,
+  ) {
+    const cart = await this.carts.linesForCheckout(transaction, ownerId);
+    await this.inventory.consumeForCheckout(
+      transaction,
+      ownerId,
+      reservationId,
+      cart.lines,
+    );
+    const id = await this.repository.createPending(
+      transaction,
+      ownerId,
+      reservationId,
+      cart,
+    );
+    return { id, cart };
+  }
+
+  paymentRecord(transaction: CommerceTransaction, id: string) {
+    return this.repository.byId(transaction, id);
   }
 
   async detail(ownerId: string, id: string) {

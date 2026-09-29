@@ -21,6 +21,9 @@ script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 repo_dir=$(cd -- "$script_dir/../.." && pwd)
 compose_file="$repo_dir/infra/compose.release.yml"
 compose=(docker compose --env-file "$env_file" -f "$compose_file")
+if grep -Eq '^ENABLE_STRIPE_TEST=true$' "$env_file"; then
+  compose+=(-f "$repo_dir/infra/compose.stripe-test.yml")
+fi
 rendered=$("${compose[@]}" config --format json)
 app_env=$(jq -r '.services.api.environment.APP_ENV' <<<"$rendered")
 site_domain=$(jq -r '.services.edge.environment.SITE_DOMAIN' <<<"$rendered")

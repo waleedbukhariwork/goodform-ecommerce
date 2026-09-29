@@ -1,0 +1,11 @@
+services:
+  api:
+    environment:
+      STRIPE_SECRET_KEY_FILE: /run/secrets/stripe_test_key
+      STRIPE_WEBHOOK_SECRET_FILE: /run/secrets/stripe_test_webhook_secret
+    secrets: [stripe_test_key, stripe_test_webhook_secret]
+secrets:
+  stripe_test_key:
+    file: ${STRIPE_SECRET_KEY_FILE:?Set a Stripe test key file}
+  stripe_test_webhook_secret:
+    file: ${STRIPE_WEBHOOK_SECRET_FILE:?Set a Stripe test webhook secret file}

@@ -111,22 +111,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/orders/prepare": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["OrdersController_prepare"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/orders/{id}": {
         parameters: {
             query?: never;
@@ -137,6 +121,38 @@ export interface paths {
         get: operations["OrdersController_detail"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/checkout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PaymentsController_checkout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orders/{id}/reconcile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["PaymentsController_reconcile"];
         delete?: never;
         options?: never;
         head?: never;
@@ -241,6 +257,11 @@ export interface components {
             totalCents: number;
             createdAt: string;
             items: components["schemas"]["OrderLineDto"][];
+        };
+        CheckoutResponseDto: {
+            orderId: string;
+            url: string;
+            status: string;
         };
     };
     responses: never;
@@ -384,7 +405,7 @@ export interface operations {
             };
         };
     };
-    OrdersController_prepare: {
+    OrdersController_detail: {
         parameters: {
             query?: never;
             header?: never;
@@ -403,7 +424,29 @@ export interface operations {
             };
         };
     };
-    OrdersController_detail: {
+    PaymentsController_checkout: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Client-generated UUID v4 */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CheckoutResponseDto"];
+                };
+            };
+        };
+    };
+    PaymentsController_reconcile: {
         parameters: {
             query?: never;
             header?: never;

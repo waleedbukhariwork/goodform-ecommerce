@@ -126,6 +126,41 @@ export class InventoryRepository {
       .where(eq(reservations.id, id));
   }
 
+  async restoreConsumed(transaction: CommerceTransaction, id: string) {
+    const group = (
+      await transaction
+        .select()
+        .from(reservations)
+        .where(eq(reservations.id, id))
+        .for("update")
+        .limit(1)
+    )[0];
+    if (!group || group.status !== "consumed") return false;
+    const held = await transaction
+      .select()
+      .from(reservationItems)
+      .where(eq(reservationItems.reservationId, id));
+    for (const item of held) {
+      await transaction
+        .update(inventoryStock)
+        .set({
+          onHand: sql`${inventoryStock.onHand} + ${item.quantity}`,
+          available: sql`${inventoryStock.available} + ${item.quantity}`,
+        })
+        .where(
+          and(
+            eq(inventoryStock.productId, item.productId),
+            eq(inventoryStock.size, item.size),
+          ),
+        );
+    }
+    await transaction
+      .update(reservations)
+      .set({ status: "released" })
+      .where(eq(reservations.id, id));
+    return true;
+  }
+
   async releaseExpired() {
     return this.db.client.transaction(async (tx) => {
       const expired = await tx
