@@ -52,6 +52,16 @@ export async function bootstrap() {
     },
   );
   const expressApp = app.getHttpAdapter().getInstance() as Express;
+  // Auth and mail-cooldown responses carry account state and must never be
+  // stored. Scoped to those prefixes only: the catalog GET is a verified
+  // public ETag cache and must keep its own headers.
+  expressApp.use(
+    /^\/api\/(auth|v1\/auth)/,
+    (_request: Request, response: Response, next: () => void) => {
+      response.setHeader("Cache-Control", "private, no-store");
+      next();
+    },
+  );
   const identity = app.get(IdentityService);
   expressApp.use(
     "/api/auth",

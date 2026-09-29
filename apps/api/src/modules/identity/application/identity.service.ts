@@ -13,12 +13,19 @@ import {
   user,
   verification,
 } from "../../../db/schema.js";
+import {
+  type MailSender,
+  resetMail,
+  verificationMail,
+} from "../infrastructure/mail.sender.js";
 
 function createIdentityAuth(
   db: Database,
   config: ConfigType<typeof runtimeConfig>,
+  mail: MailSender,
 ) {
   if (!config.PUBLIC_ORIGIN) throw new Error("PUBLIC_ORIGIN is required");
+  const mailEnforced = config.MAIL_ENABLED === true;
   return betterAuth({
     baseURL: config.PUBLIC_ORIGIN,
     basePath: "/api/auth",
@@ -28,7 +35,32 @@ function createIdentityAuth(
       provider: "pg",
       schema: { user, session, account, verification, rateLimit },
     }),
-    emailAndPassword: { enabled: true },
+    emailAndPassword: {
+      enabled: true,
+      // Only enforced where mail actually delivers. Requiring verification
+      // without a working send path would lock every new account out with no
+      // recovery, so dev and staging keep the frictionless path.
+      requireEmailVerification: mailEnforced,
+      autoSignIn: !mailEnforced,
+      sendVerificationEmail: async (payload: {
+        user: { email: string };
+        url: string;
+      }) => {
+        await mail.send("verification", {
+          ...verificationMail(payload.url),
+          to: payload.user.email,
+        });
+      },
+      sendResetPassword: async (payload: {
+        user: { email: string };
+        url: string;
+      }) => {
+        await mail.send("reset", {
+          ...resetMail(payload.url),
+          to: payload.user.email,
+        });
+      },
+    },
     session: { expiresIn: 60 * 60, updateAge: 5 * 60 },
     rateLimit: {
       enabled: true,
@@ -36,6 +68,9 @@ function createIdentityAuth(
       customRules: {
         "/sign-in/email": { window: 60, max: 5 },
         "/sign-up/email": { window: 60, max: 5 },
+        "/forget-password": { window: 60, max: 3 },
+        "/request-password-reset": { window: 60, max: 3 },
+        "/send-verification-email": { window: 60, max: 3 },
       },
     },
     advanced: {
@@ -53,10 +88,11 @@ export class IdentityService {
   constructor(
     db: Database,
     @Inject(runtimeConfig.KEY) config: ConfigType<typeof runtimeConfig>,
+    private readonly mail: MailSender,
   ) {
     if (!config.PUBLIC_ORIGIN) throw new Error("PUBLIC_ORIGIN is required");
     this.publicOrigin = config.PUBLIC_ORIGIN;
-    this.auth = createIdentityAuth(db, config);
+    this.auth = createIdentityAuth(db, config, mail);
   }
 
   async sessionFromHeaders(headers: IncomingHttpHeaders) {

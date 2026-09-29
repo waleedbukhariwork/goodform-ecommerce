@@ -278,3 +278,26 @@ export const inferenceDailyCalls = pgTable("inference_daily_calls", {
   key: varchar("key", { length: 64 }).primaryKey(),
   count: integer("count").notNull(),
 });
+
+/**
+ * Server-side send throttle for transactional mail. Keyed on a hash rather than
+ * the address itself so the table never holds a customer email, which also
+ * keeps it out of backup dumps and ad-hoc queries.
+ */
+export const mailSendAttempts = pgTable(
+  "mail_send_attempts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    kind: text("kind").notNull(),
+    emailHash: text("email_hash").notNull(),
+    windowStartedAt: timestamp("window_started_at").notNull(),
+    sentAt: timestamp("sent_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("mail_send_kind_email_window").on(
+      table.kind,
+      table.emailHash,
+      table.windowStartedAt,
+    ),
+  ],
+);

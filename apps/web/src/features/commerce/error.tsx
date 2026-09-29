@@ -5,11 +5,18 @@ export function Failure({
   context = "request",
 }: {
   error: unknown;
-  context?: "request" | "auth" | "checkout";
+  context?: "request" | "auth" | "signup" | "checkout";
 }) {
   const requestId = error instanceof ApiError ? error.requestId : undefined;
-  const message =
-    context === "auth"
+  const duplicate =
+    context === "signup" &&
+    error instanceof ApiError &&
+    (error.status === 422 || error.status === 409);
+  const message = duplicate
+    ? // Deliberately does not confirm whether the address is registered.
+      // Offers both real next steps instead of leaking account existence.
+      "An account may already exist for that email. Try signing in, or reset your password if you have forgotten it."
+    : context === "auth"
       ? "We could not sign you in with those details. Check them and try again."
       : context === "checkout"
         ? "Checkout could not be prepared. Your cart is still here; please review it before trying again."

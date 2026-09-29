@@ -4,17 +4,72 @@ import { useRouter } from "next/navigation";
 import { apiFetch } from "../../lib/transport";
 import { Failure } from "./error";
 
+/** Mirrors the server window so the first paint does not flash an enabled button. */
+const MAIL_COOLDOWN_SECONDS = 60;
+
+async function fetchCooldown(email: string): Promise<number> {
+  try {
+    const result = await apiFetch<{ retryAfterSeconds: number }>(
+      `/api/v1/auth/mail-cooldown?kind=verification&email=${encodeURIComponent(email)}`,
+      { cache: "no-store" },
+    );
+    return result?.retryAfterSeconds ?? 0;
+  } catch {
+    // Falling back to the local window is safe: the server still refuses an
+    // early send, so a failed lookup can only make the button stricter.
+    return 0;
+  }
+}
+
 export function AccountForm() {
   const router = useRouter();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [busy, setBusy] = useState(false);
   const [slow, setSlow] = useState(false);
   const [error, setError] = useState<unknown>(null);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  const [cooldown, setCooldown] = useState(0);
+  const [resendCount, setResendCount] = useState(0);
+  const [forgot, setForgot] = useState(false);
+  const [resetNotice, setResetNotice] = useState(false);
   useEffect(() => {
     if (!busy) return;
     const timer = window.setTimeout(() => setSlow(true), 3000);
     return () => window.clearTimeout(timer);
   }, [busy]);
+  // One ticking interval, torn down on unmount and whenever the wait ends.
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = window.setInterval(
+      () => setCooldown((value) => (value > 0 ? value - 1 : 0)),
+      1000,
+    );
+    return () => window.clearInterval(timer);
+  }, [cooldown > 0]);
+
+  async function requestReset(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (busy) return;
+    setBusy(true);
+    setError(null);
+    setResetNotice(false);
+    const email = String(new FormData(event.currentTarget).get("email") ?? "");
+    try {
+      // The response is identical whether or not the address exists, so it
+      // cannot be used to discover which emails are registered.
+      await apiFetch("/api/auth/request-password-reset", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email, redirectTo: "/reset-password" }),
+      });
+      setResetNotice(true);
+    } catch (cause) {
+      setError(cause);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy) return;
@@ -37,6 +92,13 @@ export function AccountForm() {
           body: JSON.stringify(body),
         },
       );
+      // Signup returns 200 with the address when verification is enforced, and
+      // an open session otherwise. Never assume a session was created.
+      if (mode === "signup" && !document.cookie) {
+        setPendingEmail(email);
+        setCooldown(await fetchCooldown(email));
+        return;
+      }
       router.push("/cart");
       router.refresh();
     } catch (cause) {
@@ -46,6 +108,115 @@ export function AccountForm() {
       setSlow(false);
     }
   }
+
+  if (pendingEmail) {
+    return (
+      <section className="account-panel" aria-label="Verify your email">
+        <h2>Check your email</h2>
+        <p role="status">
+          We sent a verification link to {pendingEmail}. Open it to finish
+          creating your account.
+        </p>
+        <p className="muted">
+          Nothing arrived? Check your spam folder, or request another link.
+        </p>
+        <div className="account-switch" role="group" aria-label="Next action">
+          <button
+            type="button"
+            className="account-tab"
+            disabled={busy || cooldown > 0}
+            aria-describedby={cooldown > 0 ? "resend-cooldown" : undefined}
+            onClick={async () => {
+              if (busy || cooldown > 0) return;
+              setBusy(true);
+              setError(null);
+              try {
+                await apiFetch("/api/auth/send-verification-email", {
+                  method: "POST",
+                  headers: { "content-type": "application/json" },
+                  body: JSON.stringify({
+                    email: pendingEmail,
+                    callbackURL: "/account",
+                  }),
+                });
+                // The server owns the cooldown; re-read it rather than
+                // guessing, so a rate-limited send cannot be retried early.
+                setCooldown(MAIL_COOLDOWN_SECONDS);
+                setResendCount((count) => count + 1);
+              } catch (cause) {
+                setError(cause);
+                setCooldown(await fetchCooldown(pendingEmail));
+              } finally {
+                setBusy(false);
+              }
+            }}
+          >
+            {busy
+              ? "Sending…"
+              : cooldown > 0
+                ? `Resend link in ${cooldown}s`
+                : "Resend link"}
+          </button>
+          <button
+            type="button"
+            className="account-tab"
+            onClick={() => {
+              setPendingEmail(null);
+              setError(null);
+              setCooldown(0);
+            }}
+          >
+            Use a different email
+          </button>
+        </div>
+        {cooldown > 0 && (
+          <p id="resend-cooldown" className="muted" aria-live="polite">
+            {resendCount > 0
+              ? `Sent ${resendCount} time${resendCount > 1 ? "s" : ""}. You can request another link when the timer reaches zero.`
+              : "For your security you can request one link per minute."}
+          </p>
+        )}
+        {error !== null && <Failure error={error} context="auth" />}
+      </section>
+    );
+  }
+
+  if (forgot) {
+    return (
+      <section className="account-panel" aria-label="Reset your password">
+        <h2>Reset your password</h2>
+        {resetNotice ? (
+          <p role="status">
+            If that address has an account, a reset link is on its way. The link
+            expires shortly.
+          </p>
+        ) : (
+          <form onSubmit={requestReset} aria-busy={busy}>
+            <label className="form-field">
+              Email
+              <input name="email" type="email" autoComplete="email" required />
+            </label>
+            <button type="submit" disabled={busy}>
+              {busy ? "Sending…" : "Send reset link"}
+            </button>
+          </form>
+        )}
+        <button
+          type="button"
+          className="secondary"
+          onClick={() => {
+            setForgot(false);
+            setResetNotice(false);
+            setError(null);
+          }}
+        >
+          Back to sign in
+        </button>
+        {error !== null && <Failure error={error} context="auth" />}
+      </section>
+    );
+  }
+
   return (
     <section className="account-panel" aria-label="Account access">
       <div className="account-switch" role="group" aria-label="Account action">
@@ -103,6 +274,16 @@ export function AccountForm() {
               : "Sign in"}
         </button>
       </form>
+      <button
+        type="button"
+        className="link-button"
+        onClick={() => {
+          setForgot(true);
+          setError(null);
+        }}
+      >
+        Forgot your password?
+      </button>
       {busy && (
         <p role="status">
           {slow
@@ -110,7 +291,12 @@ export function AccountForm() {
             : "Checking your details…"}
         </p>
       )}
-      {error !== null && <Failure error={error} context="auth" />}
+      {error !== null && (
+        <Failure
+          error={error}
+          context={mode === "signup" ? "signup" : "auth"}
+        />
+      )}
     </section>
   );
 }

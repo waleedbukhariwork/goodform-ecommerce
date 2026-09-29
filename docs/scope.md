@@ -6,7 +6,9 @@ Goodform is an independently branded eight-garment storefront with a private,
 photo-based fitting room. The user approved accounts, Stripe test checkout,
 measurement comparison and two-look preview comparison. Continuous live-camera
 try-on, AI body measurements, fit guarantees, social sharing and admin tools are
-excluded. The deadline is a 20-hour implementation window with five hours reserved
+excluded. Email verification and password reset were initially excluded and were
+added by explicit later approval, delivered through Resend in production only; MFA,
+billing notifications and marketing mail remain excluded. The deadline is a 20-hour implementation window with five hours reserved
 for final verification and submission; do not imply this clock was measured here.
 
 ## Acceptance criteria
@@ -14,6 +16,8 @@ for final verification and submission; do not imply this clock was measured here
 - S1: Browse/search eight seeded garments, inspect a product and its size chart on
   mobile and desktop. Use permitted assets and label fictional demonstration data.
 - S2: Sign up/in/out; private carts, photos, jobs and orders enforce ownership.
+  In production, signup requires confirming the email address and a password
+  reset is available; verification is enforced only where mail actually sends.
 - S3: Persist cart/variant quantities; calculate money server-side in integer cents.
 - S4: Complete Stripe test checkout using verified webhooks, idempotency and atomic
   stock reservations; browser redirects cannot mark an order paid.

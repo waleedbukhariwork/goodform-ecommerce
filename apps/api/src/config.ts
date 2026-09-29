@@ -44,6 +44,10 @@ class ApiEnvironment {
   @IsOptional() @IsString() STRIPE_SECRET_KEY?: string;
   @IsOptional() @IsString() STRIPE_WEBHOOK_SECRET?: string;
   @IsOptional() @Matches(/^[a-z][a-z0-9_-]{2,63}$/) MEDIA_NAMESPACE?: string;
+  @IsBoolean() MAIL_ENABLED!: boolean;
+  @IsOptional() @IsString() RESEND_API_KEY_FILE?: string;
+  @IsOptional() @IsString() RESEND_API_KEY?: string;
+  @IsOptional() @IsString() MAIL_FROM?: string;
 }
 
 export function apiConfig(environment: NodeJS.ProcessEnv = process.env) {
@@ -57,6 +61,12 @@ export function apiConfig(environment: NodeJS.ProcessEnv = process.env) {
         : environment.OBSERVE_ENABLED === "false"
           ? false
           : undefined;
+  // Mail is production-only by decision: real sends from staging would burn the
+  // provider's free tier and deliver to real inboxes. Verification is only
+  // enforced where mail actually sends, because an unverifiable account is a
+  // permanent lockout with no recovery.
+  const mailEnabled =
+    appEnv === "production" && environment.MAIL_ENABLED === "true";
   const config = plainToInstance(ApiEnvironment, {
     APP_ENV: appEnv,
     NODE_ENV:
@@ -84,6 +94,10 @@ export function apiConfig(environment: NodeJS.ProcessEnv = process.env) {
     MEDIA_NAMESPACE: environment.MEDIA_NAMESPACE,
     STRIPE_SECRET_KEY_FILE: environment.STRIPE_SECRET_KEY_FILE,
     STRIPE_WEBHOOK_SECRET_FILE: environment.STRIPE_WEBHOOK_SECRET_FILE,
+    MAIL_ENABLED: mailEnabled,
+    RESEND_API_KEY_FILE: environment.RESEND_API_KEY_FILE,
+    RESEND_API_KEY: environment.RESEND_API_KEY,
+    MAIL_FROM: environment.MAIL_FROM,
   });
   let databaseValid = false;
   try {
@@ -176,6 +190,19 @@ export function apiConfig(environment: NodeJS.ProcessEnv = process.env) {
       endpointValid = false;
     }
   }
+  let resendValid = true;
+  if (config.MAIL_ENABLED) {
+    try {
+      if (config.RESEND_API_KEY_FILE) {
+        const key = readFileSync(config.RESEND_API_KEY_FILE, "utf8").trim();
+        resendValid = /^re_[A-Za-z0-9_]+$/.test(key);
+        if (resendValid) config.RESEND_API_KEY = key;
+      }
+      resendValid = resendValid && Boolean(config.RESEND_API_KEY);
+    } catch {
+      resendValid = false;
+    }
+  }
   if (
     validateSync(config).length ||
     !databaseValid ||
@@ -183,13 +210,15 @@ export function apiConfig(environment: NodeJS.ProcessEnv = process.env) {
     !endpointValid ||
     !publicOriginValid ||
     !stripeValid ||
+    !resendValid ||
     !namespaceValid ||
     !sessionKeyValid ||
     (appEnv !== "dev" && config.NODE_ENV !== "production") ||
     (config.OBSERVE_ENABLED &&
       (!config.OBSERVE_APP_KEY ||
         !config.OBSERVE_APP_SECRET ||
-        !config.OBSERVE_SERVICE_ID))
+        !config.OBSERVE_SERVICE_ID)) ||
+    (config.MAIL_ENABLED && !config.MAIL_FROM)
   ) {
     throw new Error("Invalid API runtime configuration");
   }
