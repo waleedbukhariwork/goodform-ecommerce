@@ -12,3 +12,8 @@ dist/
 coverage/
 playwright-report/
 test-results/
+**/tsconfig.tsbuildinfo
+**/test-results/
+**/playwright-report/
+# Next regenerates this file differently for dev and production builds.
+apps/web/next-env.d.ts

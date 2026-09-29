@@ -20,7 +20,7 @@
       "id": "FOUNDATION",
       "title": "Working Next/Nest/Drizzle catalog with local verification",
       "phase": "application",
-      "status": "planned",
+      "status": "verified complete",
       "dependsOn": [
         "HARNESS"
       ],
@@ -28,7 +28,10 @@
         "diff-review",
         "browser-catalog",
         "local-db-persistence"
-      ]
+      ],
+      "evidenceHash": "abcecd50dc3092bcc402a446488befe834ae785a9d8b8a338ca5aca8eabd519e",
+      "evidence": "docs/evidence/FOUNDATION-75c715ba-5cea-43ac-ba15-a01f151db614.json",
+      "review": "docs/reviews/FOUNDATION.json"
     },
     {
       "id": "DELIVERY",

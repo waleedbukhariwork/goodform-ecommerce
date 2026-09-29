@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" role="img" aria-label="woven camp shirt illustration">
+<rect width="800" height="1000" fill="#edf0e8"/>
+<ellipse cx="400" cy="874" rx="245" ry="26" fill="#d8dfd4"/>
+<path d="M292 188 L346 158 Q400 218 454 158 L508 188 L638 272 L590 390 L540 362 L540 786 Q400 810 260 786 L260 362 L210 390 L162 272 Z" fill="#d89987" stroke="#aa6a59" stroke-width="10" stroke-linejoin="round"/>
+<path d="M346 158 Q400 218 454 158 L508 188 L471 244 Q400 272 329 244 L292 188 Z" fill="#aa6a59" opacity=".45"/>
+<path d="M400 253 V770" stroke="#aa6a59" stroke-width="8" opacity=".35"/>
+<path d="M260 752 Q400 782 540 752" fill="none" stroke="#aa6a59" stroke-width="8" opacity=".55"/>
+<circle cx="412" cy="322" r="5" fill="#eee9d7"/><circle cx="412" cy="410" r="5" fill="#eee9d7"/><circle cx="412" cy="498" r="5" fill="#eee9d7"/>
+</svg>

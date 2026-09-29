@@ -1,0 +1,29 @@
+{
+  "name": "goodform",
+  "private": true,
+  "packageManager": "pnpm@12.6.0",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "format:check": "prettier --check 'apps/**/*.{ts,tsx,css,json,mjs}' 'packages/*/{package,tsconfig}.json' 'infra/**/*.mjs' 'docs/{catalog-assets,local-development}.md' 'package.json' 'pnpm-workspace.yaml' 'eslint.config.mjs'",
+    "format": "prettier --write 'apps/**/*.{ts,tsx,css,json,mjs}' 'packages/*/{package,tsconfig}.json' 'infra/**/*.mjs' 'docs/{catalog-assets,local-development}.md' 'package.json' 'pnpm-workspace.yaml' 'eslint.config.mjs'",
+    "lint": "eslint apps infra --ext .ts,.tsx,.mjs",
+    "typecheck": "pnpm -r typecheck",
+    "contracts:check": "pnpm --filter @goodform/api contracts:check",
+    "test": "pnpm --filter @goodform/api test && pnpm --filter @goodform/web test",
+    "test:integration": "pnpm --filter @goodform/api test:integration",
+    "test:e2e": "pnpm --filter @goodform/web test:e2e",
+    "build": "pnpm -r build",
+    "db:migrate": "pnpm --filter @goodform/api db:migrate",
+    "db:seed": "pnpm --filter @goodform/api db:seed",
+    "dev": "pnpm -r --parallel dev"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.1",
+    "eslint": "9.39.1",
+    "typescript-eslint": "8.46.4",
+    "prettier": "3.6.2",
+    "typescript": "5.9.3"
+  }
+}

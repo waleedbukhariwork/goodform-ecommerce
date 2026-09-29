@@ -1,31 +1,11 @@
 # Current handoff
 
-- HARNESS: verified complete. Evidence:
-  `docs/evidence/HARNESS-9664d55c-9d5c-4515-87a9-9eb059bb62a3.json` and
-  `docs/reviews/HARNESS.json`. The configured verification ran 42 regression
-  tests and repository policy; both passed, with unchanged source. Local Git
-  hooks are installed. JavaScript, shell and workflow syntax checks passed.
-- Capture: trusted Codex hooks and two distinct live canaries passed. Both raw
-  prompt/final pairs are appended to `CAPTURE-TEST.md`. CLI parser failures and
-  append-only corrections remain visible in separate logs. The updated
-  Command Code hook path has fixture tests; run a fresh Command Code canary
-  before switching back to it when model quota is available.
-- Application: no app scaffold, application tests, remote CI run or deployment
-  have been verified. FOUNDATION is planned and is now the next eligible task.
-- Product and stack: `docs/scope.md`, `docs/decisions.md`, `docs/architecture.md`.
-  Fresh-session procedure: `docs/session-workflow.md`. First implementation
-  prompt: `docs/prompts/01-platform-foundation.md`. Delivery follows from
-  `docs/prompts/02-delivery.md` after a verified foundation.
-- External gates still need real evidence: AWS resources/credit coverage, DNS,
-  Google inference access/retention/credit coverage, Observe account, GitHub
-  CI permissions and deployment. Do not print credentials or claim a remote
-  result from local files.
-- Time remaining is not measured here. Record the actual clock before beginning
-  FOUNDATION and preserve five hours for final verification.
-- Existing logs are immutable. The current session's final response may append
-  after its code commit; include that append in the next bounded commit.
+- HARNESS: verified complete. Evidence: `docs/evidence/HARNESS-9664d55c-9d5c-4515-87a9-9eb059bb62a3.json`; review: `docs/reviews/HARNESS.json`. Local Git hooks are installed.
+- Capture: trusted Codex hooks passed two distinct live canaries in `CAPTURE-TEST.md`. This FOUNDATION session's prompt is in `.agent-logs/2026-09-29_03-21-27_01a0eb2e-7b06-7103-9a9a-fd000c28c27f.md`. The final response may append after the commit and belongs in the next bounded commit. Existing historical log entries remain immutable. Command Code needs its own fresh canary before use.
+- FOUNDATION: verified complete. Evidence: `docs/evidence/FOUNDATION-75c715ba-5cea-43ac-ba15-a01f151db614.json`; manual review: `docs/reviews/FOUNDATION.json`. This commit supplies a pnpm 12 workspace, Next 16 catalog, compiled Nest 12 API, Drizzle/PostgreSQL 18 migration and deterministic eight-garment seed, generated OpenAPI types, local proxy, original versioned SVG illustrations, responsive browse/search/detail/size-chart pages, and root checks.
+- Verification: `DATABASE_URL` injected for an isolated loopback PostgreSQL 18 container; `node scripts/harness/cli.mjs verify FOUNDATION` passed harness/capture tests, repository policy, `pnpm format:check`, `lint`, `typecheck`, `contracts:check`, `test`, `test:integration`, `test:e2e`, and `build`. The compiled Nest integration test covered migration and seed reruns, DTO rejection, list/detail/404, ETag change, and DB outage responses. Chrome Playwright passed two keyboard catalog-to-detail journeys at 390x844 and 1440x900. After `docker restart goodform-foundation`, PostgreSQL readiness recovered and the seeded row count remained 8.
+- Local setup: `docs/local-development.md` and placeholder `.env.*.example` files. Runtime environment is injected; the local proxy binds to loopback. No AWS, DNS, Observe dashboard, provider, remote CI or deployment result was verified.
+- Time: FOUNDATION began 2026-09-29 03:23 UTC and was verified at 03:56 UTC. The overall assignment clock is not measured here; preserve the five-hour final verification reserve.
+- Existing unrelated working-tree edits to the older capture log and `.commandcode/taste/taste/taste.md` were left unstaged. Source commit hash will be recorded after commit.
 
-Next action: open a fresh Codex chat in this repository, use the starter prompt in
-`docs/session-workflow.md`, run doctor, inspect status, start FOUNDATION and build
-only the local catalog slice. Verify with real Postgres and browser evidence, then
-hand off. Do not restart the harness or read entire historical logs into context.
+Next action: start DELIVERY from `docs/prompts/02-delivery.md` in a fresh bounded session. Inspect Git status and doctor first. Verify actual containers, environment separation and remote gates before claiming them; do not infer remote CI or deployment from local checks.

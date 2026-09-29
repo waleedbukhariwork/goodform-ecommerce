@@ -1,0 +1,117 @@
+{
+  "version": 1,
+  "id": "75c715ba-5cea-43ac-ba15-a01f151db614",
+  "taskId": "FOUNDATION",
+  "phase": "application",
+  "createdAt": "2026-09-29T03:56:26.007Z",
+  "commit": "7a30488c6525a8e37beb06cecd0e3f6ca0e268ae",
+  "sourceFingerprint": "05a405aadb6e37318f2da4940a1a11a8df447155a67413283445956b218e90e3",
+  "sourceUnchanged": true,
+  "passed": true,
+  "checks": [
+    {
+      "command": [
+        "node",
+        "--test",
+        "scripts/harness/tests.test.mjs",
+        "scripts/capture/codex.test.mjs"
+      ],
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 2017,
+      "errorCode": null
+    },
+    {
+      "command": [
+        "node",
+        "scripts/harness/cli.mjs",
+        "check"
+      ],
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 424,
+      "errorCode": null
+    },
+    {
+      "command": [
+        "pnpm",
+        "format:check"
+      ],
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 691,
+      "errorCode": null
+    },
+    {
+      "command": [
+        "pnpm",
+        "lint"
+      ],
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 992,
+      "errorCode": null
+    },
+    {
+      "command": [
+        "pnpm",
+        "typecheck"
+      ],
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 2592,
+      "errorCode": null
+    },
+    {
+      "command": [
+        "pnpm",
+        "contracts:check"
+      ],
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 3023,
+      "errorCode": null
+    },
+    {
+      "command": [
+        "pnpm",
+        "test"
+      ],
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 1856,
+      "errorCode": null
+    },
+    {
+      "command": [
+        "pnpm",
+        "test:integration"
+      ],
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 9726,
+      "errorCode": null
+    },
+    {
+      "command": [
+        "pnpm",
+        "test:e2e"
+      ],
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 10593,
+      "errorCode": null
+    },
+    {
+      "command": [
+        "pnpm",
+        "build"
+      ],
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 5489,
+      "errorCode": null
+    }
+  ],
+  "reviewHash": "ffb594fc1b4c152f43677ee0ad7a3a28fd4c7cfbe5a45207f0f81a21d8386fee"
+}

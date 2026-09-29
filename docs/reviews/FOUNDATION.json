@@ -1,0 +1,19 @@
+{
+  "checks": [
+    {
+      "criterion": "diff-review",
+      "status": "pass",
+      "evidence": "Reviewed staged file list and application source/configuration, SQL migration, seed, generated contract, package manifest, tests, versioned SVG assets, new capture log and ignore changes. git diff --cached --check and node scripts/harness/cli.mjs check passed. Pre-existing edits to the older capture log and .commandcode/taste/taste/taste.md remain unstaged. No remote service claim is made."
+    },
+    {
+      "criterion": "browser-catalog",
+      "status": "pass",
+      "evidence": "DATABASE_URL injected for local PostgreSQL 18; corepack pnpm test:e2e passed 2 Chrome Playwright journeys from a clean startup at 390x844 and 1440x900. Each observed eight cards, searched using Enter, opened Canvas Overshirt using keyboard Enter, and found the size chart. Browser test uses the local /api proxy to the compiled Nest API."
+    },
+    {
+      "criterion": "local-db-persistence",
+      "status": "pass",
+      "evidence": "corepack pnpm test:integration passed 1 compiled Nest HTTP suite against an isolated local postgres:18 container: migration and seed ran twice, eight rows remained, DTO errors/404/ETag changes/DB outage behavior passed. docker restart goodform-foundation followed by pg_isready and a psql count returned 8 rows."
+    }
+  ]
+}
