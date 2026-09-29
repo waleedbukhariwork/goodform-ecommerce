@@ -4,6 +4,7 @@ import { runtimeConfig } from "./config.js";
 import { Database } from "./db/database.js";
 import { HealthController } from "./health.controller.js";
 import { CatalogModule } from "./modules/catalog/catalog.module.js";
+import { observeImports } from "./observe.js";
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { CatalogModule } from "./modules/catalog/catalog.module.js";
       ignoreEnvFile: true,
       load: [runtimeConfig],
     }),
+    ...observeImports(),
     CatalogModule,
   ],
   controllers: [HealthController],

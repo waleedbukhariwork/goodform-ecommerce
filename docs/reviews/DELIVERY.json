@@ -1,0 +1,29 @@
+{
+  "checks": [
+    {
+      "criterion": "diff-review",
+      "status": "pass",
+      "evidence": "Reviewed the staged DELIVERY source, two Dockerfiles, Compose/Caddy, workflow and deployment scripts, tests, runtime examples, documentation, task metadata and append-only capture log. git diff --cached --check and node scripts/harness/cli.mjs check passed. The pre-existing edits to the older 01-08 capture log and .commandcode/taste/taste/taste.md remain unstaged. No credential material is committed."
+    },
+    {
+      "criterion": "container-persistence",
+      "status": "pass",
+      "evidence": "Built goodform-api:delivery and goodform-web:delivery from pinned Node digest with frozen installs; docker image inspect showed user=node for both. bash scripts/deploy/local-smoke.sh passed on the final Compose file: isolated staging and production projects each migrated and inserted eight catalog products, served the API and home page through Caddy, and passed PostgreSQL/API/web/Caddy health checks. Staging PostgreSQL restart preserved eight products; stopping staging PostgreSQL left production catalog available. The disposable smoke removed its own containers and volumes. Release dry-run passed with temporary local secret files and digest-shaped references. This was HTTP loopback evidence, not remote HTTPS evidence."
+    },
+    {
+      "criterion": "local-trace-safety",
+      "status": "pass",
+      "evidence": "DATABASE_URL injected for the isolated local PostgreSQL 18 fixture; corepack pnpm test:integration passed two tests. The Observe test confirmed disabled mode made zero exporter calls, enabled mode exported a local HTTP-to-PostgreSQL trace with a matching safe request/trace ID, excluded a query sentinel and fixture credentials from collector payload and stdout/stderr, and kept catalog requests at 200 while the collector returned 503. The database integration also terminated an idle API connection and observed safe recovery with no raw driver error on stderr. No hosted Observe dashboard was inspected."
+    },
+    {
+      "criterion": "remote-ci",
+      "status": "pending",
+      "evidence": "The application and release GitHub workflows parsed with verified actionlint 1.7.12; action references are pinned and bash scripts passed bash -n. This checkout has no Git remote and gh is unavailable. No remote GitHub Actions run URL or result exists."
+    },
+    {
+      "criterion": "deployed-smoke",
+      "status": "pending",
+      "evidence": "No AWS role, ECR repositories, funded host, DNS name, environment secrets or deployed HTTPS endpoint were available. The release procedure passed a local dry-run only. No remote image push, staging dashboard, HTTPS catalog smoke or authorized production promotion has run."
+    }
+  ]
+}

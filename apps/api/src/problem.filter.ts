@@ -6,9 +6,12 @@ import {
   HttpStatus,
 } from "@nestjs/common";
 import type { Request, Response } from "express";
+import { apiConfig } from "./config.js";
+import { safeLog } from "./logging.js";
 
 @Catch()
 export class ProblemFilter implements ExceptionFilter {
+  constructor(private readonly config: ReturnType<typeof apiConfig>) {}
   catch(error: unknown, host: ArgumentsHost) {
     const request = host
       .switchToHttp()
@@ -34,16 +37,13 @@ export class ProblemFilter implements ExceptionFilter {
           503: "UNAVAILABLE",
         } as Record<number, string>
       )[status] ?? "INTERNAL_ERROR";
-    if (status >= 500)
-      process.stderr.write(
-        JSON.stringify({
-          timestamp: new Date().toISOString(),
-          level: "error",
-          service: "api",
-          code,
-          requestId: request.requestId,
-        }) + "\n",
-      );
+    if (status >= 500) {
+      safeLog(this.config, "error", "http_error", {
+        requestId: request.requestId,
+        status,
+        code,
+      });
+    }
     response.status(status).type("application/problem+json").json({
       type: "about:blank",
       title,

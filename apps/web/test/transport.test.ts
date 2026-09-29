@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { ApiError, apiFetch } from "../src/lib/transport";
-import { internalApiOrigin } from "../src/lib/config";
+import { internalApiOrigin, webConfig } from "../src/lib/config";
 
 test("transport handles JSON, 204 and server problems", async () => {
   const original = globalThis.fetch;
@@ -45,5 +45,34 @@ test("transport rejects unsafe paths and server origin credentials", async () =>
         INTERNAL_API_ORIGIN: "http://user:pass@localhost:4000",
       }),
     /Invalid/,
+  );
+});
+
+test("web validates staged server origin at runtime", () => {
+  assert.equal(
+    webConfig({
+      APP_ENV: "staging",
+      NODE_ENV: "production",
+      INTERNAL_API_ORIGIN: "http://api:4000",
+    }).internalApiOrigin,
+    "http://api:4000",
+  );
+  assert.throws(
+    () =>
+      webConfig({
+        APP_ENV: "staging",
+        NODE_ENV: "development",
+        INTERNAL_API_ORIGIN: "http://api:4000",
+      }),
+    /Invalid web runtime configuration/,
+  );
+  assert.throws(
+    () =>
+      webConfig({
+        APP_ENV: "production",
+        NODE_ENV: "production",
+        INTERNAL_API_ORIGIN: "http://user:pass@api:4000",
+      }),
+    /Invalid INTERNAL_API_ORIGIN/,
   );
 });

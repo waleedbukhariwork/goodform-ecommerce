@@ -3,6 +3,9 @@ import assert from "node:assert/strict";
 import { execFileSync, spawn, type ChildProcess } from "node:child_process";
 import { once } from "node:events";
 import { createServer } from "node:net";
+import { createServer as createHttpServer } from "node:http";
+import { randomUUID } from "node:crypto";
+import { gunzipSync } from "node:zlib";
 import pg from "pg";
 
 const databaseUrl = process.env.DATABASE_URL;
@@ -22,14 +25,18 @@ async function freePort() {
   await once(server, "close");
   return port;
 }
-async function startApi(database: string) {
+async function startApi(database: string, overrides: NodeJS.ProcessEnv = {}) {
   const port = await freePort();
   const child = spawn(process.execPath, ["dist/src/main.js"], {
     cwd: process.cwd(),
-    env: { ...env, DATABASE_URL: database, PORT: String(port) },
-    stdio: ["ignore", "ignore", "pipe"],
+    env: { ...env, DATABASE_URL: database, PORT: String(port), ...overrides },
+    stdio: ["ignore", "pipe", "pipe"],
   });
   let stderr = "";
+  let stdout = "";
+  child.stdout?.on("data", (chunk) => {
+    stdout += String(chunk);
+  });
   child.stderr?.on("data", (chunk) => {
     stderr += String(chunk);
   });
@@ -39,7 +46,12 @@ async function startApi(database: string) {
       throw new Error("API exited before startup: " + stderr);
     try {
       if ((await fetch(base + "/api/v1/health/live")).ok)
-        return { child, base, getStderr: () => stderr };
+        return {
+          child,
+          base,
+          getStderr: () => stderr,
+          getStdout: () => stdout,
+        };
     } catch {
       /* startup pending */
     }
@@ -114,6 +126,17 @@ test("real PostgreSQL migration, seed, HTTP validation, caching and outage behav
       ),
       /price_cents_nonnegative/,
     );
+    await pool.query(
+      "select pg_terminate_backend(pid) from pg_stat_activity where application_name = 'goodform-api' and pid <> pg_backend_pid()",
+    );
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    assert.equal(api.child.exitCode, null, "idle connection error crashed API");
+    assert.equal(
+      (await fetch(api.base + "/api/v1/products")).status,
+      200,
+      "API did not reconnect after idle connection termination",
+    );
+    assert.ok(!api.getStderr().includes("terminating connection"));
   } finally {
     await stopApi(api.child);
   }
@@ -144,4 +167,111 @@ test("real PostgreSQL migration, seed, HTTP validation, caching and outage behav
     await stopApi(offline.child);
   }
   await pool.end();
+});
+
+test("Observe stays offline when disabled and exports a redacted HTTP-to-pg trace when enabled", async () => {
+  const requests: Buffer[] = [];
+  let collectorStatus = 202;
+  const collector = createHttpServer((request, response) => {
+    const chunks: Buffer[] = [];
+    request.on("data", (chunk: Buffer) => chunks.push(chunk));
+    request.on("end", () => {
+      requests.push(Buffer.concat(chunks));
+      response.writeHead(collectorStatus).end();
+    });
+  });
+  const collectorPort = await freePort();
+  collector.listen(collectorPort, "127.0.0.1");
+  await once(collector, "listening");
+  const endpoint = "http://127.0.0.1:" + collectorPort;
+  const fixtureKey = randomUUID();
+  const fixtureSecret = randomUUID();
+  const options = {
+    OBSERVE_ENDPOINT: endpoint,
+    OBSERVE_APP_KEY: fixtureKey,
+    OBSERVE_APP_SECRET: fixtureSecret,
+    OBSERVE_SERVICE_ID: "goodform-local-test",
+    OBSERVE_SAMPLE_RATE: "1",
+  };
+  try {
+    const disabled = await startApi(databaseUrl, {
+      ...options,
+      OBSERVE_ENABLED: "false",
+    });
+    try {
+      assert.equal(
+        (await fetch(disabled.base + "/api/v1/products")).status,
+        200,
+      );
+      await new Promise((resolve) => setTimeout(resolve, 2300));
+      assert.equal(requests.length, 0);
+    } finally {
+      await stopApi(disabled.child);
+    }
+
+    const enabled = await startApi(databaseUrl, {
+      ...options,
+      OBSERVE_ENABLED: "true",
+    });
+    try {
+      const sentinel = "search-" + randomUUID();
+      const requestId = randomUUID();
+      const response = await fetch(
+        enabled.base + "/api/v1/products?q=" + sentinel,
+        {
+          headers: { "x-request-id": requestId },
+        },
+      );
+      assert.equal(response.status, 200);
+      assert.equal(response.headers.get("x-request-id"), requestId);
+      for (let attempt = 0; attempt < 40 && requests.length === 0; attempt++) {
+        await new Promise((resolve) => setTimeout(resolve, 200));
+      }
+      assert.ok(requests.length > 0, "local collector received no trace");
+      const payload = requests
+        .map((data) =>
+          (data[0] === 0x1f && data[1] === 0x8b
+            ? gunzipSync(data)
+            : data
+          ).toString("utf8"),
+        )
+        .join("\n");
+      assert.ok(!payload.includes(sentinel), "query leaked to telemetry");
+      assert.ok(
+        !payload.includes(fixtureKey) && !payload.includes(fixtureSecret),
+        "collector credentials leaked into payload",
+      );
+      assert.match(
+        payload,
+        /SELECT|select/,
+        "no database query span in local trace",
+      );
+      const stdout = enabled.getStdout();
+      assert.ok(stdout.includes(requestId));
+      assert.ok(!stdout.includes(sentinel));
+      assert.ok(!stdout.includes(fixtureSecret));
+      assert.ok(stdout.includes('"traceId":"' + requestId + '"'));
+      collectorStatus = 503;
+      for (let i = 0; i < 5; i++) {
+        assert.equal(
+          (await fetch(enabled.base + "/api/v1/products")).status,
+          200,
+        );
+      }
+      await new Promise((resolve) => setTimeout(resolve, 2300));
+      assert.ok(requests.length >= 2, "collector outage was not exercised");
+      for (const output of [enabled.getStdout(), enabled.getStderr()]) {
+        assert.ok(!output.includes(sentinel));
+        assert.ok(!output.includes(fixtureKey));
+        assert.ok(!output.includes(fixtureSecret));
+        if (new URL(databaseUrl).password)
+          assert.ok(!output.includes(new URL(databaseUrl).password));
+      }
+    } finally {
+      await stopApi(enabled.child);
+    }
+  } finally {
+    collector.close();
+    await once(collector, "close");
+  }
 });

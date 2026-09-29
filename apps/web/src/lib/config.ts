@@ -1,11 +1,27 @@
-export function internalApiOrigin(environment?: {
+export function webConfig(environment?: {
+  APP_ENV?: string;
+  NODE_ENV?: string;
   INTERNAL_API_ORIGIN?: string;
 }) {
-  const raw = environment
-    ? environment.INTERNAL_API_ORIGIN
-    : process.env.INTERNAL_API_ORIGIN;
-  if (!raw) throw new Error("INTERNAL_API_ORIGIN is required");
-  const url = new URL(raw);
+  const config = environment ?? process.env;
+  const appEnv = config.APP_ENV ?? "dev";
+  const nodeEnv =
+    config.NODE_ENV ?? (appEnv === "dev" ? "development" : undefined);
+  const raw = config.INTERNAL_API_ORIGIN;
+  if (
+    !["dev", "staging", "production"].includes(appEnv) ||
+    !["development", "production"].includes(nodeEnv ?? "") ||
+    (appEnv !== "dev" && nodeEnv !== "production") ||
+    !raw
+  ) {
+    throw new Error("Invalid web runtime configuration");
+  }
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    throw new Error("Invalid INTERNAL_API_ORIGIN");
+  }
   if (
     !["http:", "https:"].includes(url.protocol) ||
     url.username ||
@@ -16,5 +32,12 @@ export function internalApiOrigin(environment?: {
   ) {
     throw new Error("Invalid INTERNAL_API_ORIGIN");
   }
-  return url.origin;
+  return { appEnv, nodeEnv, internalApiOrigin: url.origin };
+}
+export function internalApiOrigin(environment?: {
+  APP_ENV?: string;
+  NODE_ENV?: string;
+  INTERNAL_API_ORIGIN?: string;
+}) {
+  return webConfig(environment).internalApiOrigin;
 }

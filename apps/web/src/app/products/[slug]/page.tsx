@@ -14,10 +14,12 @@ export default async function ProductPage({
     product = await getProduct(slug);
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) notFound();
+    const requestId = error instanceof ApiError ? error.requestId : undefined;
     return (
       <main className="shell">
         <h1>Product unavailable</h1>
         <p>Please try again in a moment.</p>
+        {requestId && <p>Support request ID: {requestId}</p>}
         <Link href={"/products/" + slug}>Retry</Link>
       </main>
     );

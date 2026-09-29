@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { listProducts } from "../features/catalog/api";
+import { ApiError } from "../lib/transport";
 
 export default async function CatalogPage({
   searchParams,
@@ -10,11 +11,13 @@ export default async function CatalogPage({
   let result;
   try {
     result = await listProducts(q);
-  } catch {
+  } catch (error) {
+    const requestId = error instanceof ApiError ? error.requestId : undefined;
     return (
       <main className="shell">
         <h1>Collection unavailable</h1>
         <p>We could not load the catalog right now.</p>
+        {requestId && <p>Support request ID: {requestId}</p>}
         <Link href="/">Try again</Link>
       </main>
     );

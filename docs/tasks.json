@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "activeTask": null,
+  "activeTask": "DELIVERY",
   "tasks": [
     {
       "id": "HARNESS",
@@ -37,7 +37,7 @@
       "id": "DELIVERY",
       "title": "Environment isolation, containers, tracing, CI and release path",
       "phase": "application",
-      "status": "planned",
+      "status": "implemented but unverified",
       "dependsOn": [
         "FOUNDATION"
       ],

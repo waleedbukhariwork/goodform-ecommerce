@@ -17,7 +17,9 @@
   },
   "dependencies": {
     "@nestjs/common": "12.1.1",
+    "@nestjs/config": "12.0.1",
     "@nestjs/core": "12.1.1",
+    "@nestjs/observe": "0.3.3",
     "@nestjs/platform-express": "12.1.1",
     "@nestjs/swagger": "12.0.2",
     "class-transformer": "0.5.1",
@@ -25,16 +27,15 @@
     "drizzle-orm": "0.45.3",
     "pg": "8.16.3",
     "reflect-metadata": "0.2.2",
-    "rxjs": "7.8.2",
-    "@nestjs/config": "12.0.1"
+    "rxjs": "7.8.2"
   },
   "devDependencies": {
+    "@types/express": "5.0.5",
     "@types/node": "24.9.1",
     "@types/pg": "8.15.5",
     "drizzle-kit": "0.31.11",
     "openapi-typescript": "7.10.1",
     "tsx": "4.20.6",
-    "typescript": "5.9.3",
-    "@types/express": "5.0.5"
+    "typescript": "5.9.3"
   }
 }

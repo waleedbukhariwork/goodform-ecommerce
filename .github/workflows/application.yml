@@ -1,0 +1,57 @@
+name: Application checks
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+permissions:
+  contents: read
+concurrency:
+  group: application-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  application:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    services:
+      postgres:
+        image: postgres@sha256:4ef4dbc939d61acea57712655ddb4b4ab27419c913f94cca0cd57cb3ea3c2280
+        env:
+          POSTGRES_DB: goodform_ci
+          POSTGRES_USER: goodform_ci
+          POSTGRES_PASSWORD: local-ci-only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U goodform_ci -d goodform_ci"
+          --health-interval 5s --health-timeout 3s --health-retries 12
+    env:
+      APP_ENV: dev
+      DATABASE_URL: postgres://goodform_ci:local-ci-only@127.0.0.1:5432/goodform_ci
+      NEXT_TELEMETRY_DISABLED: '1'
+      OBSERVE_ENABLED: 'false'
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+      - name: Frozen install
+        run: corepack pnpm install --frozen-lockfile
+      - name: Formatting, lint, types and contracts
+        run: |
+          corepack pnpm format:check
+          corepack pnpm lint
+          corepack pnpm typecheck
+          corepack pnpm contracts:check
+      - name: Unit and database integration
+        run: |
+          corepack pnpm test
+          corepack pnpm test:integration
+      - name: Browser catalog journey
+        run: corepack pnpm test:e2e
+      - name: Production builds
+        run: corepack pnpm build
+      - name: Release image builds
+        run: |
+          docker build -f apps/api/Dockerfile -t goodform-api:ci .
+          docker build -f apps/web/Dockerfile -t goodform-web:ci .

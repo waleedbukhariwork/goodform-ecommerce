@@ -1,0 +1,96 @@
+name: goodform-${APP_ENV:?Set staging or production APP_ENV}
+services:
+  postgres:
+    image: postgres@sha256:4ef4dbc939d61acea57712655ddb4b4ab27419c913f94cca0cd57cb3ea3c2280
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?Set isolated database name}
+      POSTGRES_USER: ${POSTGRES_USER:?Set isolated database user}
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets: [db_password]
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:?} -d ${POSTGRES_DB:?}"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    stop_grace_period: 60s
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+  api:
+    image: ${API_IMAGE:?Set an immutable image reference}
+    environment:
+      APP_ENV: ${APP_ENV:?}
+      NODE_ENV: production
+      BIND_ADDRESS: 0.0.0.0
+      PORT: "4000"
+      DATABASE_URL_FILE: /run/secrets/database_url
+      OBSERVE_ENABLED: ${OBSERVE_ENABLED:-false}
+      RELEASE_SHA: ${RELEASE_SHA:?}
+      MEDIA_NAMESPACE: ${MEDIA_NAMESPACE:?Set isolated media namespace}
+      SESSION_KEY_FILE: /run/secrets/session_key
+    secrets: [database_url, session_key]
+    depends_on:
+      postgres: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4000/api/v1/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    stop_grace_period: 30s
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+  web:
+    image: ${WEB_IMAGE:?Set an immutable image reference}
+    environment:
+      APP_ENV: ${APP_ENV:?}
+      NODE_ENV: production
+      INTERNAL_API_ORIGIN: http://api:4000
+      PORT: "3000"
+      RELEASE_SHA: ${RELEASE_SHA:?}
+    depends_on:
+      api: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    stop_grace_period: 30s
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+  edge:
+    image: caddy@sha256:6aeddd44c3078b0f9a35206472a11420648a79c184603ef95957d0a20044cb2b
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN:?Set environment hostname}
+    ports:
+      - "${EDGE_HTTP_BIND:-80:80}"
+      - "${EDGE_HTTPS_BIND:-443:443}"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      web: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:2019/config/"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    stop_grace_period: 30s
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+secrets:
+  db_password:
+    file: ${DB_PASSWORD_FILE:?Set environment-specific password file}
+  database_url:
+    file: ${DATABASE_URL_FILE:?Set environment-specific connection URL file}
+  session_key:
+    file: ${SESSION_KEY_FILE:?Set environment-specific session key file}
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

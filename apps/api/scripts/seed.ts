@@ -4,8 +4,9 @@ import { apiConfig } from "../src/config.js";
 import { products, type SizeMeasurement } from "../src/db/schema.js";
 
 const config = apiConfig();
-if (config.APP_ENV !== "dev")
-  throw new Error("Demo catalog seed is permitted only in dev");
+const deploySeed = process.argv.includes("--deploy");
+if (config.APP_ENV !== "dev" && !deploySeed)
+  throw new Error("Release catalog seed requires --deploy");
 const pool = new pg.Pool({ connectionString: config.DATABASE_URL });
 const db = drizzle(pool);
 const sizes: SizeMeasurement[] = [
@@ -91,12 +92,14 @@ try {
       imagePath: "/products/" + slug + "-v1.svg",
       sizes,
     };
-    await db
-      .insert(products)
-      .values(record)
-      .onConflictDoUpdate({ target: products.slug, set: record });
+    const insert = db.insert(products).values(record);
+    if (deploySeed) {
+      await insert.onConflictDoNothing({ target: products.slug });
+    } else {
+      await insert.onConflictDoUpdate({ target: products.slug, set: record });
+    }
   }
-  process.stdout.write("Seeded 8 demonstration garments\n");
+  process.stdout.write("Catalog seed applied\n");
 } finally {
   await pool.end();
 }

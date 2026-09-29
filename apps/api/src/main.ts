@@ -1,23 +1,41 @@
 import "reflect-metadata";
-import { randomUUID } from "node:crypto";
 import { NestFactory } from "@nestjs/core";
 import { ValidationPipe } from "@nestjs/common";
 import { AppModule } from "./app.module.js";
+import type { Request, Response } from "express";
+import {
+  assignRequestId,
+  SafeLogger,
+  safeLog,
+  withRequestContext,
+} from "./logging.js";
+import { ObserveInstrument } from "./observe.js";
 import { apiConfig } from "./config.js";
 import { ProblemFilter } from "./problem.filter.js";
 
 export async function bootstrap() {
   const config = apiConfig();
-  const app = await NestFactory.create(AppModule, { logger: false });
+  const app = await NestFactory.create(AppModule, {
+    logger: new SafeLogger(config),
+    ...(config.OBSERVE_ENABLED ? { instrument: ObserveInstrument } : {}),
+  });
   app.use(
     (
-      request: { requestId?: string },
-      response: { setHeader: (name: string, value: string) => void },
+      request: Request & { requestId?: string },
+      response: Response,
       next: () => void,
     ) => {
-      request.requestId = randomUUID();
-      response.setHeader("X-Request-Id", request.requestId);
-      next();
+      const requestId = assignRequestId(request);
+      response.setHeader("X-Request-Id", requestId);
+      withRequestContext(requestId, () => {
+        response.once("finish", () =>
+          safeLog(config, "info", "http_request", {
+            requestId,
+            status: response.statusCode,
+          }),
+        );
+        next();
+      });
     },
   );
   app.useGlobalPipes(
@@ -29,8 +47,10 @@ export async function bootstrap() {
       transformOptions: { enableImplicitConversion: false },
     }),
   );
-  app.useGlobalFilters(new ProblemFilter());
-  await app.listen(config.PORT, "127.0.0.1");
+  app.useGlobalFilters(new ProblemFilter(config));
+  app.enableShutdownHooks(["SIGTERM", "SIGINT"]);
+  await app.listen(config.PORT, config.BIND_ADDRESS);
+  safeLog(config, "info", "startup");
   return app;
 }
 
