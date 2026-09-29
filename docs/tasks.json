@@ -96,6 +96,22 @@
       ]
     },
     {
+      "id": "TRANSACTIONAL_MAIL",
+      "title": "Email verification and password reset through Resend",
+      "phase": "application",
+      "status": "implemented but unverified",
+      "dependsOn": [
+        "FOUNDATION"
+      ],
+      "manualChecks": [
+        "verification-delivery",
+        "verification-enforced",
+        "reset-delivery",
+        "resend-cooldown",
+        "no-cache-headers"
+      ]
+    },
+    {
       "id": "FITTING_ROOM",
       "title": "Private uploads, generation jobs, comparison and measurements",
       "phase": "application",

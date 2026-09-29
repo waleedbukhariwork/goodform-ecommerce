@@ -1,0 +1,29 @@
+{
+  "checks": [
+    {
+      "criterion": "verification-delivery",
+      "status": "pending",
+      "evidence": "Not observed. No Resend account, verified sending domain or API key was available, so no verification email was ever sent and no delivered message was inspected. The send path is implemented and typechecked: ResendMailSender enforces an 8s bound by racing the SDK call, which accepts neither a timeout nor an AbortSignal in this version, and a provider error result is raised rather than swallowed. A real send requires MAIL_ENABLED=true, a verified Resend domain, a matching MAIL_FROM and RESEND_API_KEY_FILE in production."
+    },
+    {
+      "criterion": "verification-enforced",
+      "status": "pending",
+      "evidence": "Not observed end to end. requireEmailVerification is set to MAIL_ENABLED, so production blocks sign-in until the address is confirmed, while dev and staging keep the previous frictionless path because they never send mail. Enforcement was confirmed in configuration only: apiConfig accepted a valid production mail configuration with MAIL_ENABLED=true and forced MAIL_ENABLED=false when APP_ENV was dev, and rejected a missing MAIL_FROM, a malformed key, and mail enabled without a key. No browser run observed an unverified account being refused, because the local environment cannot send mail."
+    },
+    {
+      "criterion": "reset-delivery",
+      "status": "pending",
+      "evidence": "Not observed. The request-password-reset endpoint, the /reset-password page and the sendResetPassword callback are implemented, and the reset notice is deliberately identical for existing and unknown addresses so the response cannot be used to enumerate registered emails. No reset email was sent or completed, and no expired, reused or mismatched token was exercised."
+    },
+    {
+      "criterion": "resend-cooldown",
+      "status": "pass",
+      "evidence": "Local disposable PostgreSQL, migration 0008 applied, eight assertions via apps/api/scripts/mail-throttle-probe.ts all passed: a first claim left a cooldown between 1 and 60 seconds, a second claim in the same window was refused with MailCooldownError, a different address was unaffected, the reset kind had its own independent window, and the stored rows contained no raw address. The cooldown is enforced by a unique index on (kind, email_hash, window_started_at) rather than in the browser, so it survives a restart and cannot be bypassed by refreshing. The client countdown is advisory and reads the remaining window from the server. This is local database evidence only, not provider or deployed evidence."
+    },
+    {
+      "criterion": "no-cache-headers",
+      "status": "pending",
+      "evidence": "Not observed over HTTP. A scoped Express middleware in main.ts sets private, no-store for /api/auth and /api/v1/auth only, deliberately leaving the catalog GET's verified public ETag behaviour unchanged, and the client cooldown lookup requests cache no-store. This was not confirmed with curl or a browser response inspection, and the deployed edge was not checked."
+    }
+  ]
+}
