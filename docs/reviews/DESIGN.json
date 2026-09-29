@@ -1,0 +1,39 @@
+{
+  "checks": [
+    {
+      "criterion": "art-direction-documented",
+      "status": "pass",
+      "evidence": "docs/design-system.md records the atelier fitting-room voice, palette, density, imagery rules and refusals before component work."
+    },
+    {
+      "criterion": "state-matrix-complete",
+      "status": "pending",
+      "evidence": "The intended states are documented in docs/design-system.md, but none has been implemented or manually reviewed."
+    },
+    {
+      "criterion": "asset-licences",
+      "status": "pending",
+      "evidence": "The first approved Pexels candidate was rejected after visual review because it shows a visible Levi's label and does not depict the seeded fictional jacket accurately. No photograph has been added. A coherent eight-photo set with documented licences and releases remains unavailable."
+    },
+    {
+      "criterion": "behavior-preserved",
+      "status": "pending",
+      "evidence": "No UI or server behavior was changed in this checkpoint. Redesign behavior cannot be reviewed yet."
+    },
+    {
+      "criterion": "responsive-matrix",
+      "status": "pending",
+      "evidence": "No redesigned surfaces exist to inspect at the required viewport widths."
+    },
+    {
+      "criterion": "accessibility-pass",
+      "status": "pending",
+      "evidence": "No redesigned surfaces exist for keyboard, screen-reader, contrast or reduced-motion review."
+    },
+    {
+      "criterion": "measured-vitals",
+      "status": "pending",
+      "evidence": "No production-build Lighthouse or Core Web Vitals measurement was run. No scores or thresholds are claimed."
+    }
+  ]
+}

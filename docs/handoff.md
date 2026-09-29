@@ -1,3 +1,9 @@
+## DESIGN handoff — 2026-09-29
+
+- Status: **blocked** after the required `doctor` and `task start DESIGN` commands. `docs/design-system.md` contains the written atelier art direction and a proposed component state matrix; `docs/reviews/DESIGN.json` records the remaining checks as pending. No component, token, server, seed, or product asset was changed. No automated test, harness `verify`, or `task finish` ran.
+- Imagery gate: the user accepted evaluation of a Pexels denim-jacket candidate under the Pexels License. Visual inspection showed a prominent Levi's label and a tight crop that does not depict the seeded fictional cropped jacket clearly. The temporary file was rejected and never added to the repository. Searches for the olive overshirt, rust tee, navy polo, and coral camp shirt did not establish a set with consistent crop, lighting, background, and garment scale. The required coherent eight-photo set, provenance, and release evidence remain missing.
+- Next action: obtain or authorize a coherent commercially licensed eight-photo set covering the seeded garments, with per-image author/source/licence and release status. Resume DESIGN asset work before rebuilding components. Keep the existing SVGs until the complete set passes visual and rights review. The pre-existing edits to the older 01-08 agent log and `.commandcode/taste/taste/taste.md` remain untouched and unstaged.
+
 # Current handoff
 
 - HARNESS and FOUNDATION: verified complete. Evidence remains in `docs/evidence/HARNESS-9664d55c-9d5c-4515-87a9-9eb059bb62a3.json` and `docs/evidence/FOUNDATION-75c715ba-5cea-43ac-ba15-a01f151db614.json`. The Next/Nest/Drizzle catalog and two live Codex capture canaries were established before DELIVERY. Command Code still needs its own fresh canary before use.

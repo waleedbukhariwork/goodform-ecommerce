@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "activeTask": "DELIVERY",
+  "activeTask": "DESIGN",
   "tasks": [
     {
       "id": "HARNESS",
@@ -81,7 +81,7 @@
       "id": "DESIGN",
       "title": "Store identity, interface quality and measured performance",
       "phase": "application",
-      "status": "planned",
+      "status": "blocked",
       "dependsOn": [
         "FOUNDATION"
       ],
