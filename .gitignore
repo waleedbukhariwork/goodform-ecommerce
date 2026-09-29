@@ -1,0 +1,2 @@
+# Per-machine capture state (regenerable; logs themselves in .agent-logs/ are committed)
+.commandcode/.capture-state/
