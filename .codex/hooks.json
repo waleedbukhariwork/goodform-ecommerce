@@ -1,0 +1,41 @@
+{
+  "description": "8x assignment: capture only raw user prompts and final responses into immutable session logs.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/scripts/capture/codex.mjs\" hook",
+            "timeout": 10,
+            "statusMessage": "Capture assignment prompt and final response"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/scripts/capture/codex.mjs\" hook",
+            "timeout": 10,
+            "statusMessage": "Capture assignment prompt and final response"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/scripts/capture/codex.mjs\" hook",
+            "timeout": 10,
+            "statusMessage": "Capture assignment prompt and final response"
+          }
+        ]
+      }
+    ]
+  }
+}

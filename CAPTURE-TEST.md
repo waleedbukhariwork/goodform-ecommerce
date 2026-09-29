@@ -101,3 +101,33 @@ Got it — this looks like a capture test message, nothing actionable in it. Let
 For the interactive session doing the build: restart `cmd` (optionally `cmd -c` /
 `cmd -r` to resume) so the hook is loaded. From then on every turn is captured
 automatically.
+
+---
+
+## Codex transition — 2026-09-29 (live verification pending)
+
+The user switched from Command Code after its model limit was reached. This setup
+uses Codex in VS Code, `codex-cli 0.155.0-alpha.16.3`, with `gpt-6-astra` recorded in
+turn metadata for both planning and execution. No separate execution agent is used.
+
+Native hook definitions: `.codex/hooks.json` (`SessionStart`, `UserPromptSubmit`,
+`Stop`). Capture implementation: `scripts/capture/codex.mjs`. Activation instructions
+and limitations: `docs/codex-capture.md`.
+
+The current raw Codex transcript was recovered into:
+`.agent-logs/2026-09-29_01-08-48_01a0eab5-0cd5-7d33-a8f9-b0dec051cd27.md`
+
+At recovery: 10 exact prompts and 7 final responses. Two earlier prompts had no
+final response in the source; the current capture-setup turn was still active.
+The original records were recovered, not reconstructed. This does not claim that
+Codex capture was automatic before setup. No pre-existing logs were rewritten.
+
+Executed: `node --test scripts/capture/codex.test.mjs` — 10 passed, 0 failed.
+An initial test caught an end-of-log matcher accepting an incomplete tail; that
+matcher was fixed and the full capture suite passed. Fixture canaries are not live
+canary evidence. The Command Code hook configuration does not apply to Codex.
+
+Pending: user review/trust through Codex `/hooks`, reload, and two distinct real
+Codex canary sessions. Their exact prompt/response entries and paths will be
+appended here after they occur. Do not start assignment implementation before that
+check passes. No canary entries are fabricated in this document.

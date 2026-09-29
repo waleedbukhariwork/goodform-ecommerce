@@ -1,0 +1,2 @@
+# Raw submission transcripts must retain the user's whitespace verbatim.
+.agent-logs/** -whitespace
