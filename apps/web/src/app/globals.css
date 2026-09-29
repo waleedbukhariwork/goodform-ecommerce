@@ -420,6 +420,27 @@ select:disabled {
 .search-row input {
   min-width: 0;
 }
+.search-clear {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  margin-top: var(--space-1);
+  color: var(--accent);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  text-underline-offset: 3px;
+}
+input[aria-invalid="true"] {
+  border-color: var(--danger);
+  background: var(--danger-surface);
+}
+.field-error {
+  display: block;
+  color: var(--danger);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1.4;
+}
 .catalog-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

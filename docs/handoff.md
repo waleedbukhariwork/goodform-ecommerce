@@ -1,3 +1,9 @@
+## Frontend form and search refinement — 2026-09-30
+
+- Status: **in progress** under DESIGN. Account sign-in, signup, reset request and password reset now use branded inline field errors, focus the first invalid input, and clear errors as entries become valid. Catalog Search is disabled for empty or whitespace-only queries and trims submitted queries. The pinned Better Auth signup response token is used to distinguish a new session from an email-verification step; HttpOnly cookies cannot be inspected by client JavaScript.
+- Local checks passed: `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, `pnpm contracts:check`, `pnpm test`, `pnpm build`, `node scripts/harness/cli.mjs check`, and `git diff --check`. A focused headless Chrome check passed empty/invalid/corrected account and reset inputs plus Search button state and trimmed navigation. The catalog browser check used a temporary local catalog-only response; it does not prove API integration. Full integration/e2e suites and DESIGN harness verification remain outstanding.
+- Staging deployment requested after the focused checks. Release images and public smoke are pending in this handoff section until actually observed.
+
 ## DESIGN implementation and staging request — 2026-09-30
 
 - Status: **in progress**, implemented locally and unverified by the harness at the user's request. The user authorized a temporary best-suited photograph set and asked for commit and deployment. The earlier blocked DESIGN note below is a historical checkpoint superseded by this section.

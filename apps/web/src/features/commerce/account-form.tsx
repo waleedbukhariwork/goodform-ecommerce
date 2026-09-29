@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "../../lib/transport";
 import { Failure } from "./error";
+import { useFormValidation } from "../../components/ui/form-validation";
 
 /** Mirrors the server window so the first paint does not flash an enabled button. */
 const MAIL_COOLDOWN_SECONDS = 60;
@@ -32,6 +33,7 @@ export function AccountForm() {
   const [resendCount, setResendCount] = useState(0);
   const [forgot, setForgot] = useState(false);
   const [resetNotice, setResetNotice] = useState(false);
+  const validation = useFormValidation("account");
   useEffect(() => {
     if (!busy) return;
     const timer = window.setTimeout(() => setSlow(true), 3000);
@@ -49,7 +51,7 @@ export function AccountForm() {
 
   async function requestReset(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (busy) return;
+    if (busy || !validation.validate(event.currentTarget)) return;
     setBusy(true);
     setError(null);
     setResetNotice(false);
@@ -72,7 +74,7 @@ export function AccountForm() {
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (busy) return;
+    if (busy || !validation.validate(event.currentTarget)) return;
     setBusy(true);
     setSlow(false);
     setError(null);
@@ -84,7 +86,7 @@ export function AccountForm() {
         ? { name: String(form.get("name") ?? ""), email, password }
         : { email, password };
     try {
-      await apiFetch(
+      const response = await apiFetch<{ token: string | null }>(
         "/api/auth/" + (mode === "signup" ? "sign-up/email" : "sign-in/email"),
         {
           method: "POST",
@@ -92,9 +94,9 @@ export function AccountForm() {
           body: JSON.stringify(body),
         },
       );
-      // Signup returns 200 with the address when verification is enforced, and
-      // an open session otherwise. Never assume a session was created.
-      if (mode === "signup" && !document.cookie) {
+      // The session cookie is HttpOnly. Better Auth returns a null token when
+      // signup needs email verification, and a token when it signs in.
+      if (mode === "signup" && response?.token === null) {
         setPendingEmail(email);
         setCooldown(await fetchCooldown(email));
         return;
@@ -191,10 +193,17 @@ export function AccountForm() {
             expires shortly.
           </p>
         ) : (
-          <form onSubmit={requestReset} aria-busy={busy}>
+          <form onSubmit={requestReset} aria-busy={busy} noValidate>
             <label className="form-field">
               Email
-              <input name="email" type="email" autoComplete="email" required />
+              <input
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                {...validation.fieldProps("email")}
+              />
+              {validation.fieldError("email")}
             </label>
             <button type="submit" disabled={busy}>
               {busy ? "Sending…" : "Send reset link"}
@@ -208,6 +217,7 @@ export function AccountForm() {
             setForgot(false);
             setResetNotice(false);
             setError(null);
+            validation.clear();
           }}
         >
           Back to sign in
@@ -227,6 +237,7 @@ export function AccountForm() {
           onClick={() => {
             setMode("signin");
             setError(null);
+            validation.clear();
           }}
         >
           Sign in
@@ -238,21 +249,36 @@ export function AccountForm() {
           onClick={() => {
             setMode("signup");
             setError(null);
+            validation.clear();
           }}
         >
           Create account
         </button>
       </div>
-      <form onSubmit={submit} aria-busy={busy}>
+      <form onSubmit={submit} aria-busy={busy} noValidate>
         {mode === "signup" && (
           <label className="form-field">
             Name
-            <input name="name" autoComplete="name" required minLength={2} />
+            <input
+              name="name"
+              autoComplete="name"
+              required
+              minLength={2}
+              {...validation.fieldProps("name")}
+            />
+            {validation.fieldError("name")}
           </label>
         )}
         <label className="form-field">
           Email
-          <input name="email" type="email" autoComplete="email" required />
+          <input
+            name="email"
+            type="email"
+            autoComplete="email"
+            required
+            {...validation.fieldProps("email")}
+          />
+          {validation.fieldError("email")}
         </label>
         <label className="form-field">
           Password
@@ -264,7 +290,9 @@ export function AccountForm() {
             }
             required
             minLength={8}
+            {...validation.fieldProps("password")}
           />
+          {validation.fieldError("password")}
         </label>
         <button type="submit" disabled={busy}>
           {busy
@@ -280,6 +308,7 @@ export function AccountForm() {
         onClick={() => {
           setForgot(true);
           setError(null);
+          validation.clear();
         }}
       >
         Forgot your password?

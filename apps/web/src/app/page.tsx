@@ -4,6 +4,7 @@ import { ProductMedia } from "../components/ui/product-media";
 import { Icon } from "../components/ui/icon";
 import { formatMoney } from "../lib/money";
 import { Failure } from "../features/commerce/error";
+import { CatalogSearch } from "../features/catalog/catalog-search";
 
 type Search = { q?: string; category?: string; sort?: string };
 
@@ -85,22 +86,7 @@ export default async function CatalogPage({
               {items.length} of {result.total} garments
             </span>
           </h2>
-          <form role="search" action="/" method="get">
-            <label htmlFor="catalog-search">Find a garment</label>
-            <div className="search-row">
-              <input
-                id="catalog-search"
-                name="q"
-                type="search"
-                defaultValue={q}
-                maxLength={80}
-                placeholder="Search by name or material"
-              />
-              <button type="submit">
-                <Icon name="search" /> Search
-              </button>
-            </div>
-          </form>
+          <CatalogSearch initialQuery={q} />
         </div>
         {result.items.length > 0 && (
           <form

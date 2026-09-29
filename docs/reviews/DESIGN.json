@@ -50,13 +50,18 @@
     "AWS SSM release.sh dry-run and deploy on existing staging host",
     "curl -fsSI https://goodform.waleedbukhari.com/",
     "curl -fsS https://goodform.waleedbukhari.com/api/v1/products",
-    "@playwright/test Chromium public staging 390x844 manual smoke"
+    "@playwright/test Chromium public staging 390x844 manual smoke",
+    "pnpm contracts:check (passed after form UX changes)",
+    "pnpm test (passed after form UX changes)",
+    "pnpm format:check, pnpm lint, pnpm typecheck, pnpm build (passed after form UX changes)",
+    "Chrome local UI check using a temporary catalog-only response: account, reset, focus, live errors, whitespace search, trimmed submit (passed)",
+    "node scripts/harness/cli.mjs check (passed after form UX changes)"
   ],
   "notRun": [
-    "automated tests",
     "harness verify",
     "task finish",
-    "Lighthouse CLI"
+    "Lighthouse CLI",
+    "full application integration and browser suites after form UX changes"
   ],
   "deployment": {
     "environment": "existing AWS staging",
