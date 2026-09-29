@@ -1,0 +1,24 @@
+{
+  "checks": [
+    {
+      "criterion": "browser-checkout",
+      "status": "pending",
+      "evidence": "Local Chrome at 390x844: eight catalog cards in one column, signup reached cart, product add persisted one $39.00 line, checkout returned a 503 with a support request ID because no Stripe test account key was available. At 1440x900 the catalog displayed four columns; signout denied cart access and relogin restored the saved line. No provider checkout or paid order page was observed."
+    },
+    {
+      "criterion": "stripe-webhooks",
+      "status": "pending",
+      "evidence": "Local raw HTTP rejected an invalid Stripe signature with 400 problem+json. A locally SDK-signed synthetic ignored event returned duplicate false then duplicate true, with one processed event row. No real Stripe test delivery, provider session retrieval, payment transition, or reconciliation was observed without account credentials."
+    },
+    {
+      "criterion": "cross-account-denial",
+      "status": "pending",
+      "evidence": "Local HTTP with two separate accounts returned 404 for a second account reading the first account's reservation and order; an anonymous protected request returned 401 problem+json. This was observed only on the disposable local stack; deployed access isolation remains unobserved."
+    },
+    {
+      "criterion": "deployed-smoke",
+      "status": "pending",
+      "evidence": "No deployed HTTPS endpoint or remote Stripe webhook was available. Local API, web and PostgreSQL checks do not establish deployed behavior."
+    }
+  ]
+}
