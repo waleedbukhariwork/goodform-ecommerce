@@ -43,7 +43,14 @@
     "pnpm typecheck",
     "pnpm lint (passed after fixing unused preloadLarge)",
     "pnpm build",
-    "@playwright/test Chromium production preview manual viewport and interaction scripts (Node heredocs; no automated test suite)"
+    "@playwright/test Chromium production preview manual viewport and interaction scripts (Node heredocs; no automated test suite)",
+    "docker build -f apps/api/Dockerfile -t .../goodform/api:design-1aece69 .",
+    "docker build -f apps/web/Dockerfile -t .../goodform/web:design-1aece69 .",
+    "docker push (both immutable ECR image tags)",
+    "AWS SSM release.sh dry-run and deploy on existing staging host",
+    "curl -fsSI https://goodform.waleedbukhari.com/",
+    "curl -fsS https://goodform.waleedbukhari.com/api/v1/products",
+    "@playwright/test Chromium public staging 390x844 manual smoke"
   ],
   "notRun": [
     "automated tests",
@@ -51,5 +58,15 @@
     "task finish",
     "Lighthouse CLI"
   ],
-  "deployment": "pending"
+  "deployment": {
+    "environment": "existing AWS staging",
+    "url": "https://goodform.waleedbukhari.com/",
+    "sourceCommit": "1aece69",
+    "apiDigest": "sha256:b4876d90c728edbfc1cc6a68c6377d1388dc278317580ce9514299c122dd823c",
+    "webDigest": "sha256:c94f3915e93729bce3321960772669ac28818690a85a95e693d83efd5e204fe3",
+    "dryRunCommandId": "b1c3af49-f274-40b8-8ff4-9631e12a32eb",
+    "releaseCommandId": "e893de5c-b26e-4e5d-8832-4954cdb9df25",
+    "result": "pass",
+    "evidence": "Release created a PostgreSQL backup, applied migrations and seed, reported healthy API/web/edge/PostgreSQL and passed HTTPS smoke. Independent HTTPS 200 home/photo, eight v2 catalog paths, 401 anonymous cart and HTTP 308 checks passed. Public Chrome at 390px showed eight cards, loaded product image, no overflow or page errors. Initial attempt failed before migration because the host needed ECR login; existing instance role login and retry succeeded."
+  }
 }
