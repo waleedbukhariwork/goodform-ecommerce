@@ -7,6 +7,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
@@ -91,3 +92,82 @@ export const rateLimit = pgTable("rate_limit", {
   count: integer("count").notNull(),
   lastRequest: bigint("last_request", { mode: "number" }).notNull(),
 });
+
+export const cartItems = pgTable(
+  "cart_items",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    productId: uuid("product_id")
+      .notNull()
+      .references(() => products.id),
+    size: varchar("size", { length: 16 }).notNull(),
+    quantity: integer("quantity").notNull(),
+  },
+  (table) => [
+    uniqueIndex("cart_user_product_size").on(
+      table.userId,
+      table.productId,
+      table.size,
+    ),
+    check("cart_quantity_bounded", sql`${table.quantity} BETWEEN 1 AND 10`),
+  ],
+);
+
+export const inventoryStock = pgTable(
+  "inventory_stock",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    productId: uuid("product_id")
+      .notNull()
+      .references(() => products.id),
+    size: varchar("size", { length: 16 }).notNull(),
+    available: integer("available").notNull(),
+  },
+  (table) => [
+    uniqueIndex("inventory_product_size").on(table.productId, table.size),
+    check("inventory_available_nonnegative", sql`${table.available} >= 0`),
+  ],
+);
+
+export const reservations = pgTable(
+  "reservations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    status: varchar("status", { length: 16 }).notNull(),
+    expiresAt: timestamp("expires_at").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    check(
+      "reservation_status_valid",
+      sql`${table.status} IN ('active', 'released', 'consumed')`,
+    ),
+  ],
+);
+
+export const reservationItems = pgTable(
+  "reservation_items",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    reservationId: uuid("reservation_id")
+      .notNull()
+      .references(() => reservations.id, { onDelete: "cascade" }),
+    productId: uuid("product_id")
+      .notNull()
+      .references(() => products.id),
+    size: varchar("size", { length: 16 }).notNull(),
+    quantity: integer("quantity").notNull(),
+  },
+  (table) => [
+    check(
+      "reservation_item_quantity_bounded",
+      sql`${table.quantity} BETWEEN 1 AND 10`,
+    ),
+  ],
+);

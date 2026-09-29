@@ -1,9 +1,9 @@
-import type { NextFunction, Request, Response } from "express";
+import type { NextFunction, Response } from "express";
 import type { apiConfig } from "../../../config.js";
 import { IdentityService } from "../application/identity.service.js";
+import type { OwnerRequest } from "../identity.types.js";
 
 type RuntimeConfig = ReturnType<typeof apiConfig>;
-export type OwnerRequest = Request & { ownerId?: string; requestId?: string };
 
 const publicReads = [
   /^\/api\/v1\/health\/(live|ready)$/,

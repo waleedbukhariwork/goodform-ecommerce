@@ -7,5 +7,6 @@ import { CatalogController } from "./presentation/catalog.controller.js";
 @Module({
   controllers: [CatalogController],
   providers: [Database, CatalogRepository, CatalogService],
+  exports: [CatalogService],
 })
 export class CatalogModule {}

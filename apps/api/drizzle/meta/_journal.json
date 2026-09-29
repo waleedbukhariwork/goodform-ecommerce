@@ -15,6 +15,13 @@
       "when": 1790677690298,
       "tag": "0001_sturdy_warbound",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790678466202,
+      "tag": "0002_spooky_vin_gonzales",
+      "breakpoints": true
     }
   ]
 }

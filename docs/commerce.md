@@ -1,0 +1,13 @@
+# Commerce data and local observations
+
+## Cart and reservations
+
+The cart persists at most 20 distinct product/size lines per account. Each quantity is an integer from 1 through 10. Unknown fields are rejected. The optional `priceCents` input on a cart PUT is accepted only to demonstrate that client-supplied prices have no effect; it is never read by the cart service. Every cart response joins current catalog snapshots through the catalog's public capability and calculates integer-cent line and cart totals on the server. A checkout will re-read prices inside its transaction in the orders phase.
+
+Inventory tracks available units for each product and size. The catalog seed inserts five units per variant only if no stock row exists, so rerunning it does not replenish sold or reserved units. A cart reservation lasts 15 minutes. The inventory repository sorts lines and updates each stock row only when `available >= requested quantity` inside one PostgreSQL transaction, then inserts the reservation line. Failure rolls back both stock decrements and the reservation group. A group and its lines are read only with a matching session owner. Expired active groups are released explicitly by `pnpm --filter @goodform/api db:release-reservations`. That command transitions status and increments stock in one transaction; rerunning it makes no further change. There is no background release timer.
+
+## Phase 3 HTTP and database observations, 2026-09-29
+
+Using two freshly signed-in accounts against the running local API and disposable PostgreSQL, both cart PUT requests returned 200 with a 3,900-cent server total after submitting `priceCents: 1`. Cart responses had `Cache-Control: private, no-store`. Quantities 0 and 11 and an unrecognized field each returned 400. The first account signed out, signed back in, and GET `/api/v1/cart` still returned its item and 3,900-cent total. An attempt to delete the other account's cart item returned 404.
+
+For a size with exactly one available unit, two concurrent POST `/api/v1/reservations` requests returned one 201 and one 409 problem+json. PostgreSQL showed one active reservation group, one line, and zero available units. The other account's GET of the winner's reservation returned 404; the owner received 200 and `active`. After moving that disposable reservation's expiry into the past, the release command reported one release, then zero on a second run. Available stock went from zero to one, and the group became `released`. The demo stock row was then restored to five units. These are local observations; no checkout or payment was involved.

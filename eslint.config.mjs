@@ -43,6 +43,42 @@ export default tseslint.config(
     },
   },
   {
+    files: ["apps/api/src/modules/carts/**/*.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            "**/catalog/application/**",
+            "**/catalog/infrastructure/**",
+            "**/catalog/presentation/**",
+            "**/inventory/application/**",
+            "**/inventory/infrastructure/**",
+            "**/inventory/presentation/**",
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ["apps/api/src/modules/inventory/**/*.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            "**/carts/application/**",
+            "**/carts/infrastructure/**",
+            "**/carts/presentation/**",
+            "**/catalog/application/**",
+            "**/catalog/infrastructure/**",
+            "**/catalog/presentation/**",
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ["apps/api/src/modules/*/domain/**/*.ts"],
     rules: {
       "no-restricted-imports": [

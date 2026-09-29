@@ -12,6 +12,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/migrate.ts",
     "db:seed": "tsx scripts/seed.ts",
+    "db:release-reservations": "tsx scripts/release-reservations.ts",
     "test": "node --import tsx --test test/unit.test.ts",
     "test:integration": "pnpm build && node --import tsx --test test/integration.test.ts"
   },

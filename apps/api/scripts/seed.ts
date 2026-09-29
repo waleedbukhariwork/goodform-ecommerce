@@ -1,7 +1,12 @@
 import { drizzle } from "drizzle-orm/node-postgres";
+import { eq } from "drizzle-orm";
 import pg from "pg";
 import { apiConfig } from "../src/config.js";
-import { products, type SizeMeasurement } from "../src/db/schema.js";
+import {
+  inventoryStock,
+  products,
+  type SizeMeasurement,
+} from "../src/db/schema.js";
 
 const config = apiConfig();
 const deploySeed = process.argv.includes("--deploy");
@@ -97,6 +102,19 @@ try {
       await insert.onConflictDoNothing({ target: products.slug });
     } else {
       await insert.onConflictDoUpdate({ target: products.slug, set: record });
+    }
+    const [product] = await db
+      .select({ id: products.id })
+      .from(products)
+      .where(eq(products.slug, slug))
+      .limit(1);
+    for (const size of sizes) {
+      await db
+        .insert(inventoryStock)
+        .values({ productId: product.id, size: size.size, available: 5 })
+        .onConflictDoNothing({
+          target: [inventoryStock.productId, inventoryStock.size],
+        });
     }
   }
   process.stdout.write("Catalog seed applied\n");

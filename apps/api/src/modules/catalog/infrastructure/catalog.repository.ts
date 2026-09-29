@@ -28,6 +28,16 @@ export class CatalogRepository {
     return { rows, total: totals[0].value };
   }
 
+  async byId(id: string) {
+    return (
+      await this.db.client
+        .select()
+        .from(products)
+        .where(eq(products.id, id))
+        .limit(1)
+    )[0];
+  }
+
   async bySlug(slug: string) {
     return (
       await this.db.client
