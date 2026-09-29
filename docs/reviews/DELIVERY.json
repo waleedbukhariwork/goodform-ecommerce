@@ -22,8 +22,8 @@
     },
     {
       "criterion": "deployed-smoke",
-      "status": "pending",
-      "evidence": "On 2026-09-29, AWS CLI caller identity and Cost Explorer read-only queries worked in ap-south-1. Two running instances are tagged for other projects; no Goodform ECR repository or Route53 hosted zone exists. The user selected a new dedicated Goodform instance. Billing GetCredits returned AccessDeniedException because IAM billing access is not activated, so credit eligibility and balance remain unknown. Domain or public-IP preview choice and an AWS budget or credit confirmation are pending. No new AWS resources, image push, DNS, HTTPS smoke, or production promotion have occurred."
+      "status": "pass",
+      "evidence": "2026-09-29 staging deployment on dedicated ap-south-1 EC2 i-01e4b1cbb723f3cfd (t3.medium, EIP 3.108.229.151) after the user configured goodform.waleedbukhari.com A record. Security group sg-0d858e884b42662a3 permits inbound TCP 80/443 only; IMDSv2 is required and SSM provides administration without SSH. Immutable ECR release 8ae4e2e6399b: API sha256:08c9fbcf35d54c102d386ddff03a2c9acefe636f2d0b555ef42ee29d74070e29, web sha256:d7752349ea3387a0679c085b65a9100101a4d66a81371ff5ae5a71e11aa438bf. SSM audit 469c2cb7-36e7-4d2b-b0ee-8e94a4d45b87 confirmed current.json records those digests and PostgreSQL/API/web/Caddy healthy; release log ended with HTTPS catalog smoke passed. SSM edge restart 36afb431-6c74-4e2b-af74-356f758c4b8c applied the Caddy headers. Public checks: HTTP 308 to HTTPS; trusted TLS certificate CN goodform.waleedbukhari.com valid to 2026-12-28; HTTPS home 200, catalog contains eight products, anonymous cart 401; response includes HSTS max-age=86400, nosniff, Referrer-Policy strict-origin-when-cross-origin, and X-Frame-Options DENY. ECR basic OS scans of the new runtime manifests completed with zero critical, two high and one low each; residual zlib/Perl/glibc findings remain. This is a staging smoke only; Stripe test keys, real checkout/webhook, hosted Observe, remote CI, backup restore and production promotion were not verified."
     }
   ]
 }
