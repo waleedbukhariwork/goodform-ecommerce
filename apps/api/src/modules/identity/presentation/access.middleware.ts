@@ -16,6 +16,7 @@ function deny(
   request: OwnerRequest,
   status: 401 | 403 | 503,
 ) {
+  response.setHeader("Cache-Control", "private, no-store");
   const title =
     status === 401
       ? "Unauthorized"
