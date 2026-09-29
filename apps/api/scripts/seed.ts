@@ -94,7 +94,7 @@ try {
       category,
       color,
       priceCents,
-      imagePath: "/products/" + slug + "-v1.svg",
+      imagePath: "/products/" + slug + "-v2-1200.jpg",
       sizes,
     };
     const insert = db.insert(products).values(record);
