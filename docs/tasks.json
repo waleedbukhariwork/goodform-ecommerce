@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "activeTask": "COMMERCE",
+  "activeTask": "INFERENCE",
   "tasks": [
     {
       "id": "HARNESS",
@@ -53,7 +53,7 @@
       "id": "INFERENCE",
       "title": "Verify funded inference access, latency, quality and retention",
       "phase": "application",
-      "status": "planned",
+      "status": "implemented but unverified",
       "dependsOn": [
         "FOUNDATION"
       ],
