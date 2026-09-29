@@ -3,37 +3,53 @@
     {
       "criterion": "art-direction-documented",
       "status": "pass",
-      "evidence": "docs/design-system.md records the atelier fitting-room voice, palette, density, imagery rules and refusals before component work."
+      "evidence": "docs/design-system.md records voice, palette, density, imagery, refusals and the component state matrix before the component edits."
     },
     {
       "criterion": "state-matrix-complete",
-      "status": "pending",
-      "evidence": "The intended states are documented in docs/design-system.md, but none has been implemented or manually reviewed."
+      "status": "partial",
+      "evidence": "Catalog, product, cart, account and order states have skeleton, empty, pending, success and request-ID error treatments where applicable. A public per-size stock state is unavailable in the existing product DTO; the UI explains that stock is checked at reservation. Skeleton geometry and every slow state have not had a full manual screen-reader pass."
     },
     {
       "criterion": "asset-licences",
-      "status": "pending",
-      "evidence": "The first approved Pexels candidate was rejected after visual review because it shows a visible Levi's label and does not depict the seeded fictional jacket accurately. No photograph has been added. A coherent eight-photo set with documented licences and releases remains unavailable."
+      "status": "pass",
+      "evidence": "Eight locally committed v2 JPG/WebP references; per-asset Pexels source, author, commercial licence URL, 2026-09-29 retrieval and release status are in docs/design-system.md. No identifiable faces. The set is temporary and varies in lighting/cut/colour; garment accuracy is not claimed."
     },
     {
       "criterion": "behavior-preserved",
-      "status": "pending",
-      "evidence": "No UI or server behavior was changed in this checkpoint. Redesign behavior cannot be reviewed yet."
+      "status": "partial",
+      "evidence": "Isolated production preview manually completed signup, add to cart, quantity 1 to 2 with server total $158.00, and removal. Failed PUT returned a human message and support request ID with pending state cleared. Checkout provider flow and paid order remain unobserved because test credentials are absent. API money, owner scope, payment and caching code were not edited."
     },
     {
       "criterion": "responsive-matrix",
-      "status": "pending",
-      "evidence": "No redesigned surfaces exist to inspect at the required viewport widths."
+      "status": "pass",
+      "evidence": "Production preview in Google Chrome via @playwright/test chromium inspected /, /products/canvas-overshirt, /cart, /account and /orders/not-an-order at 320, 375, 390, 414, 768, 1024, 1280, 1440 and 1920 CSS px. documentElement.scrollWidth equalled clientWidth in all 45 observations; no pageerror occurred. Long names/emails were not exhaustively inspected."
     },
     {
       "criterion": "accessibility-pass",
-      "status": "pending",
-      "evidence": "No redesigned surfaces exist for keyboard, screen-reader, contrast or reduced-motion review."
+      "status": "partial",
+      "evidence": "Manual keyboard pass at 390px reached Skip to content then navigation; focused size control had a visible 3px outline. Reduced-motion emulation yielded 0s transition duration. Semantic labels, live regions and aria-current were reviewed in code. A screen-reader pass and full rendered contrast audit were not completed."
     },
     {
       "criterion": "measured-vitals",
-      "status": "pending",
-      "evidence": "No production-build Lighthouse or Core Web Vitals measurement was run. No scores or thresholds are claimed."
+      "status": "partial",
+      "evidence": "Production Next build on local loopback, Google Chrome headless via @playwright/test, 390x844 mobile emulation with 4x CPU throttle, 150ms latency, 200000 B/s down and 75000 B/s up: 3 LCP runs 720/628/616ms (median 628ms), CLS 0.01105/0.00048/0.00048 (median 0.00048). Desktop 1440x900 unthrottled: LCP 180/320/168ms (median 180ms), CLS 0 in all 3. Navigation used networkidle plus 1s observation. This is a local warm-server lab observation, not field CWV. INP and Lighthouse category scores were not measured; 99+ target is unverified."
     }
-  ]
+  ],
+  "commands": [
+    "node scripts/harness/cli.mjs doctor",
+    "node scripts/harness/cli.mjs task start DESIGN",
+    "pnpm format:check",
+    "pnpm typecheck",
+    "pnpm lint (passed after fixing unused preloadLarge)",
+    "pnpm build",
+    "@playwright/test Chromium production preview manual viewport and interaction scripts (Node heredocs; no automated test suite)"
+  ],
+  "notRun": [
+    "automated tests",
+    "harness verify",
+    "task finish",
+    "Lighthouse CLI"
+  ],
+  "deployment": "pending"
 }

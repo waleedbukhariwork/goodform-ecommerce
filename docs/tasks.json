@@ -81,7 +81,7 @@
       "id": "DESIGN",
       "title": "Store identity, interface quality and measured performance",
       "phase": "application",
-      "status": "blocked",
+      "status": "in progress",
       "dependsOn": [
         "FOUNDATION"
       ],
