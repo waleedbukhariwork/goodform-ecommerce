@@ -33,7 +33,7 @@ deployed database has no host port. Caddy handles HTTPS automatically when
 `SITE_DOMAIN` is a real hostname with DNS pointing to the host.
 
 Use disposable local secrets and `infra/compose.release.yml` for a container
-smoke. Bind Caddy to loopback, set `SITE_DOMAIN=:80`, and use the local image tags.
+smoke. Bind Caddy to loopback, set `SITE_DOMAIN=:80` and `PUBLIC_ORIGIN=https://localhost` for the disposable smoke, and use the local image tags. A remote release requires `PUBLIC_ORIGIN` to match its HTTPS site hostname.
 Run the compiled migration and insert-only `seed.js --deploy` in one-shot API containers before starting
 all services. The committed `scripts/deploy/local-smoke.sh` repeats this for
 staging and production and checks catalog persistence and environment separation.

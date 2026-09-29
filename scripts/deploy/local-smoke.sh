@@ -51,6 +51,7 @@ DATABASE_URL_FILE=$tmp_dir/$app_env-database-url
 SESSION_KEY_FILE=$tmp_dir/$app_env-session-key
 MEDIA_NAMESPACE=$app_env-catalog
 SITE_DOMAIN=:80
+PUBLIC_ORIGIN=https://localhost
 API_IMAGE=goodform-api:delivery
 WEB_IMAGE=goodform-web:delivery
 RELEASE_SHA=$release_sha

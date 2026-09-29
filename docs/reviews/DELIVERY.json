@@ -8,7 +8,7 @@
     {
       "criterion": "container-persistence",
       "status": "pass",
-      "evidence": "Built goodform-api:delivery and goodform-web:delivery from pinned Node digest with frozen installs; docker image inspect showed user=node for both. bash scripts/deploy/local-smoke.sh passed on the final Compose file: isolated staging and production projects each migrated and inserted eight catalog products, served the API and home page through Caddy, and passed PostgreSQL/API/web/Caddy health checks. Staging PostgreSQL restart preserved eight products; stopping staging PostgreSQL left production catalog available. The disposable smoke removed its own containers and volumes. Release dry-run passed with temporary local secret files and digest-shaped references. This was HTTP loopback evidence, not remote HTTPS evidence."
+      "evidence": "Built goodform-api:delivery and goodform-web:delivery from pinned Node digest with frozen installs; docker image inspect showed user=node for both. bash scripts/deploy/local-smoke.sh passed on the final Compose file: isolated staging and production projects each migrated and inserted eight catalog products, served the API and home page through Caddy, and passed PostgreSQL/API/web/Caddy health checks. Staging PostgreSQL restart preserved eight products; stopping staging PostgreSQL left production catalog available. The disposable smoke removed its own containers and volumes. Release dry-run passed with temporary local secret files and digest-shaped references. This was HTTP loopback evidence, not remote HTTPS evidence. On 2026-09-29, after COMMERCE and INFERENCE source changes, both current API and web Docker release images rebuilt successfully. The first repeat smoke failed at migration because local SITE_DOMAIN=:80 yielded an invalid PUBLIC_ORIGIN; Compose now accepts a disposable local PUBLIC_ORIGIN override. The repeat smoke passed for staging and production: migration and insert-only seed, eight catalog products and home page, healthy PostgreSQL/API/web/Caddy, staging PostgreSQL restart persistence, and production availability after staging PostgreSQL stopped. Release dry-run accepted a matching HTTPS origin and rejected a mismatched origin. No AWS deployment is implied."
     },
     {
       "criterion": "local-trace-safety",
@@ -23,7 +23,7 @@
     {
       "criterion": "deployed-smoke",
       "status": "pending",
-      "evidence": "No AWS role, ECR repositories, funded host, DNS name, environment secrets or deployed HTTPS endpoint were available. The release procedure passed a local dry-run only. No remote image push, staging dashboard, HTTPS catalog smoke or authorized production promotion has run."
+      "evidence": "On 2026-09-29, AWS CLI caller identity and Cost Explorer read-only queries worked in ap-south-1. Two running instances are tagged for other projects; no Goodform ECR repository or Route53 hosted zone exists. The user selected a new dedicated Goodform instance. Billing GetCredits returned AccessDeniedException because IAM billing access is not activated, so credit eligibility and balance remain unknown. Domain or public-IP preview choice and an AWS budget or credit confirmation are pending. No new AWS resources, image push, DNS, HTTPS smoke, or production promotion have occurred."
     }
   ]
 }

@@ -27,9 +27,11 @@ fi
 rendered=$("${compose[@]}" config --format json)
 app_env=$(jq -r '.services.api.environment.APP_ENV' <<<"$rendered")
 site_domain=$(jq -r '.services.edge.environment.SITE_DOMAIN' <<<"$rendered")
+public_origin=$(jq -r '.services.api.environment.PUBLIC_ORIGIN' <<<"$rendered")
 [[ $app_env == staging || $app_env == production ]] || { printf 'APP_ENV must be staging or production\n' >&2; exit 2; }
 [[ $site_domain =~ ^[a-zA-Z0-9.-]+$ && $site_domain == *.* ]] || { printf 'SITE_DOMAIN must be a hostname\n' >&2; exit 2; }
 [[ $site_domain != *.invalid ]] || { printf 'Placeholder hostname cannot be deployed\n' >&2; exit 2; }
+[[ $public_origin == "https://$site_domain" ]] || { printf 'PUBLIC_ORIGIN must match SITE_DOMAIN\n' >&2; exit 2; }
 "${compose[@]}" config --quiet
 while IFS= read -r secret_file; do
   [[ -r $secret_file && -s $secret_file ]] || { printf 'Missing or empty release secret file\n' >&2; exit 2; }
