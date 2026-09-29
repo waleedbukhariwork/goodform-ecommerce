@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ApiError } from "../../../lib/transport";
 import { getProduct } from "../../../features/catalog/api";
+import { AddToCart } from "../../../features/commerce/add-to-cart";
 
 export default async function ProductPage({
   params,
@@ -44,6 +45,10 @@ export default async function ProductPage({
             Fictional demonstration garment. Measurements below are illustrative
             and do not predict personal fit.
           </p>
+          <AddToCart
+            slug={product.slug}
+            sizes={product.sizes.map((entry) => entry.size)}
+          />
           <h2>Garment size chart</h2>
           <div className="table-scroll">
             <table>

@@ -22,7 +22,8 @@ a {
   color: inherit;
 }
 button,
-input {
+input,
+select {
   font: inherit;
 }
 button {
@@ -31,6 +32,7 @@ button {
   color: #fff;
   border: 0;
   padding: 0.8rem 1.2rem;
+  min-height: 44px;
 }
 button:hover {
   background: var(--accent);
@@ -49,6 +51,13 @@ button:hover {
 }
 .site-header a {
   text-decoration: none;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+.site-header nav {
+  display: flex;
+  gap: 1.2rem;
 }
 .brand {
   font-size: 1.15rem;
@@ -265,5 +274,161 @@ footer {
   }
   .card-info p {
     margin-top: 0.25rem;
+  }
+}
+
+.page-shell {
+  padding-top: 2rem;
+}
+.page-shell h1 {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  letter-spacing: -0.04em;
+}
+.purchase-panel {
+  margin: 2rem 0;
+  border-top: 1px solid var(--line);
+  padding-top: 1.5rem;
+}
+.form-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.form-row label,
+.account-panel label {
+  display: grid;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  flex: 1;
+}
+.form-row input,
+.form-row select,
+.account-panel input {
+  min-height: 44px;
+  border: 1px solid var(--line);
+  background: white;
+  padding: 0.65rem;
+  font: inherit;
+  width: 100%;
+}
+.account-panel {
+  max-width: 30rem;
+  background: white;
+  padding: 1.5rem;
+  border: 1px solid var(--line);
+}
+.account-panel form {
+  display: grid;
+  gap: 1rem;
+}
+.account-switch {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+.account-switch button {
+  background: var(--cream);
+  color: var(--ink);
+  flex: 1;
+}
+.account-switch button.active {
+  background: var(--ink);
+  color: white;
+}
+.signout-panel {
+  margin-top: 3rem;
+}
+.cart-items {
+  border-top: 1px solid var(--line);
+}
+.cart-item {
+  display: grid;
+  grid-template-columns: 96px 1fr auto;
+  gap: 1rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--line);
+  align-items: center;
+}
+.cart-item img {
+  width: 96px;
+  aspect-ratio: 4/5;
+  object-fit: cover;
+  background: var(--cream);
+}
+.cart-item h2,
+.cart-item h3 {
+  margin: 0 0 0.4rem;
+  font-size: 1.1rem;
+}
+.cart-item p {
+  margin: 0 0 0.5rem;
+  color: var(--muted);
+}
+.text-button {
+  background: none;
+  color: var(--accent);
+  padding: 0;
+  text-decoration: underline;
+}
+.text-button:hover {
+  background: none;
+}
+.checkout-bar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 2rem;
+  margin-top: 2rem;
+}
+.checkout-bar strong,
+.order-total {
+  font-size: 1.3rem;
+}
+.notice {
+  padding: 1rem 1.25rem;
+  margin: 1.5rem 0;
+  background: var(--cream);
+}
+.error-notice {
+  background: #faece7;
+}
+.notice p:last-child {
+  margin-bottom: 0;
+}
+@media (max-width: 480px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  .site-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+  }
+  .site-header nav {
+    width: 100%;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+  .brand span {
+    display: none;
+  }
+  .shell {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  .form-row,
+  .checkout-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .cart-item {
+    grid-template-columns: 72px 1fr;
+  }
+  .cart-item img {
+    width: 72px;
+  }
+  .cart-item strong {
+    grid-column: 2;
   }
 }

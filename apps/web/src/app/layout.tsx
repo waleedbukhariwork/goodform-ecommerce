@@ -18,6 +18,8 @@ export default function RootLayout({
           </a>
           <nav aria-label="Main navigation">
             <a href="/">Collection</a>
+            <a href="/cart">Cart</a>
+            <a href="/account">Account</a>
           </nav>
         </header>
         {children}
