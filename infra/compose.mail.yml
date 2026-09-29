@@ -1,0 +1,10 @@
+services:
+  api:
+    environment:
+      MAIL_ENABLED: "true"
+      RESEND_API_KEY_FILE: /run/secrets/resend_api_key
+      MAIL_FROM: ${MAIL_FROM:?Set a Resend sender on a verified domain}
+    secrets: [resend_api_key]
+secrets:
+  resend_api_key:
+    file: ${RESEND_API_KEY_HOST_FILE:?Set the host path to the Resend API key}

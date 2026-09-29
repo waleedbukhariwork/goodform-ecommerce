@@ -24,6 +24,9 @@ compose=(docker compose --env-file "$env_file" -f "$compose_file")
 if grep -Eq '^ENABLE_STRIPE_TEST=true$' "$env_file"; then
   compose+=(-f "$repo_dir/infra/compose.stripe-test.yml")
 fi
+if grep -Eq '^ENABLE_MAIL=true$' "$env_file"; then
+  compose+=(-f "$repo_dir/infra/compose.mail.yml")
+fi
 rendered=$("${compose[@]}" config --format json)
 app_env=$(jq -r '.services.api.environment.APP_ENV' <<<"$rendered")
 site_domain=$(jq -r '.services.edge.environment.SITE_DOMAIN' <<<"$rendered")
@@ -61,7 +64,9 @@ if [[ $mode == rollback ]]; then
   export API_IMAGE WEB_IMAGE RELEASE_SHA
   "${compose[@]}" up -d --wait api web edge
   smoke
-  cp "$target" "$state_dir/current.json"
+  if [[ $target != "$state_dir/current.json" ]]; then
+    cp "$target" "$state_dir/current.json"
+  fi
   rm -f "$state_dir/attempted.json"
   printf 'Rolled back images. Database migrations are not reversed.\n'
   exit 0
