@@ -1,7 +1,9 @@
+export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { getOrder } from "../../../features/commerce/api";
 import { Failure } from "../../../features/commerce/error";
 import { OrderStatus } from "../../../features/commerce/order-status";
+import { Icon } from "../../../components/ui/icon";
 export default async function OrderPage({
   params,
 }: {
@@ -11,20 +13,23 @@ export default async function OrderPage({
   try {
     const order = await getOrder(id);
     return (
-      <main className="shell page-shell">
+      <main id="main" className="shell page-shell">
         <Link className="back" href="/">
-          ← Collection
+          <Icon name="arrow-left" /> Collection
         </Link>
-        <h1>Your order</h1>
+        <span className="eyebrow">Your purchase</span>
+        <h1 className="page-heading">Order status</h1>
         <OrderStatus initial={order} />
       </main>
     );
   } catch (error) {
     return (
-      <main className="shell page-shell">
-        <h1>Order unavailable</h1>
+      <main id="main" className="shell page-shell">
+        <h1 className="page-heading">Order unavailable</h1>
         <Failure error={error} />
-        <Link href="/cart">Back to cart</Link>
+        <Link className="button secondary" href="/cart">
+          Back to cart
+        </Link>
       </main>
     );
   }

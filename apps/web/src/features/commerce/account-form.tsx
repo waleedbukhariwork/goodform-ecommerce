@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "../../lib/transport";
 import { Failure } from "./error";
@@ -8,10 +8,18 @@ export function AccountForm() {
   const router = useRouter();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [busy, setBusy] = useState(false);
+  const [slow, setSlow] = useState(false);
   const [error, setError] = useState<unknown>(null);
+  useEffect(() => {
+    if (!busy) return;
+    const timer = window.setTimeout(() => setSlow(true), 3000);
+    return () => window.clearTimeout(timer);
+  }, [busy]);
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (busy) return;
     setBusy(true);
+    setSlow(false);
     setError(null);
     const form = new FormData(event.currentTarget);
     const email = String(form.get("email") ?? "");
@@ -35,14 +43,16 @@ export function AccountForm() {
       setError(cause);
     } finally {
       setBusy(false);
+      setSlow(false);
     }
   }
   return (
-    <section className="account-panel">
-      <div className="account-switch">
+    <section className="account-panel" aria-label="Account access">
+      <div className="account-switch" role="group" aria-label="Account action">
         <button
           type="button"
-          className={mode === "signin" ? "active" : ""}
+          className="account-tab"
+          aria-pressed={mode === "signin"}
           onClick={() => {
             setMode("signin");
             setError(null);
@@ -52,7 +62,8 @@ export function AccountForm() {
         </button>
         <button
           type="button"
-          className={mode === "signup" ? "active" : ""}
+          className="account-tab"
+          aria-pressed={mode === "signup"}
           onClick={() => {
             setMode("signup");
             setError(null);
@@ -61,18 +72,18 @@ export function AccountForm() {
           Create account
         </button>
       </div>
-      <form onSubmit={submit}>
+      <form onSubmit={submit} aria-busy={busy}>
         {mode === "signup" && (
-          <label>
+          <label className="form-field">
             Name
             <input name="name" autoComplete="name" required minLength={2} />
           </label>
         )}
-        <label>
+        <label className="form-field">
           Email
           <input name="email" type="email" autoComplete="email" required />
         </label>
-        <label>
+        <label className="form-field">
           Password
           <input
             name="password"
@@ -92,7 +103,14 @@ export function AccountForm() {
               : "Sign in"}
         </button>
       </form>
-      {error !== null && <Failure error={error} />}
+      {busy && (
+        <p role="status">
+          {slow
+            ? "Still connecting. Your details are being checked securely."
+            : "Checking your details…"}
+        </p>
+      )}
+      {error !== null && <Failure error={error} context="auth" />}
     </section>
   );
 }
@@ -102,6 +120,7 @@ export function SignOut() {
   const [error, setError] = useState<unknown>(null);
   const [busy, setBusy] = useState(false);
   async function signOut() {
+    if (busy) return;
     setBusy(true);
     setError(null);
     try {
@@ -115,7 +134,12 @@ export function SignOut() {
   }
   return (
     <>
-      <button type="button" disabled={busy} onClick={signOut}>
+      <button
+        type="button"
+        className="secondary"
+        disabled={busy}
+        onClick={signOut}
+      >
         {busy ? "Signing out…" : "Sign out"}
       </button>
       {error !== null && <Failure error={error} />}
