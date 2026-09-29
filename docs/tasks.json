@@ -78,6 +78,24 @@
       ]
     },
     {
+      "id": "DESIGN",
+      "title": "Store identity, interface quality and measured performance",
+      "phase": "application",
+      "status": "planned",
+      "dependsOn": [
+        "FOUNDATION"
+      ],
+      "manualChecks": [
+        "art-direction-documented",
+        "state-matrix-complete",
+        "asset-licences",
+        "behavior-preserved",
+        "responsive-matrix",
+        "accessibility-pass",
+        "measured-vitals"
+      ]
+    },
+    {
       "id": "FITTING_ROOM",
       "title": "Private uploads, generation jobs, comparison and measurements",
       "phase": "application",
