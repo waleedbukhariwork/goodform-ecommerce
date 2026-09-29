@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { CatalogRepository } from "../infrastructure/catalog.repository.js";
+import type { CommerceTransaction } from "../../../db/transaction-runner.js";
 import type { CatalogProductSnapshot } from "../catalog.types.js";
 import type { ProductDto } from "../presentation/catalog.dto.js";
 
@@ -41,8 +42,8 @@ export class CatalogService {
     return this.snapshot(row);
   }
 
-  async snapshotById(id: string) {
-    const row = await this.repository.byId(id);
+  async snapshotById(id: string, transaction?: CommerceTransaction) {
+    const row = await this.repository.byId(id, transaction);
     if (!row) throw new NotFoundException("Product not found");
     return this.snapshot(row);
   }

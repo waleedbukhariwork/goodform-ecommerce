@@ -3,7 +3,13 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
+import type { CommerceTransaction } from "../../../db/transaction-runner.js";
+import type { CheckoutLine } from "../../carts/index.js";
 import { CartService } from "../../carts/index.js";
+import {
+  ReservationConflictError,
+  ReservationNotFoundError,
+} from "../domain/reservation-error.js";
 import { InsufficientStockError } from "../domain/stock-error.js";
 import { InventoryRepository } from "../infrastructure/inventory.repository.js";
 
@@ -22,6 +28,35 @@ export class InventoryService {
     } catch (error) {
       if (error instanceof InsufficientStockError)
         throw new ConflictException("Insufficient stock");
+      throw error;
+    }
+  }
+
+  async consumeForCheckout(
+    transaction: CommerceTransaction,
+    ownerId: string,
+    id: string,
+    lines: CheckoutLine[],
+  ) {
+    try {
+      await this.repository.consume(
+        transaction,
+        ownerId,
+        id,
+        lines.map(({ productId, size, quantity }) => ({
+          productId,
+          size,
+          quantity,
+        })),
+      );
+    } catch (error) {
+      if (error instanceof ReservationNotFoundError)
+        throw new NotFoundException("Reservation not found");
+      if (
+        error instanceof ReservationConflictError ||
+        error instanceof InsufficientStockError
+      )
+        throw new ConflictException("Reservation unavailable");
       throw error;
     }
   }

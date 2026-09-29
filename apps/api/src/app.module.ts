@@ -4,6 +4,7 @@ import { runtimeConfig } from "./config.js";
 import { Database } from "./db/database.js";
 import { HealthController } from "./health.controller.js";
 import { CartsModule } from "./modules/carts/index.js";
+import { OrdersModule } from "./modules/orders/index.js";
 import { InventoryModule } from "./modules/inventory/index.js";
 import { IdentityModule } from "./modules/identity/index.js";
 import { CatalogModule } from "./modules/catalog/catalog.module.js";
@@ -21,6 +22,7 @@ import { observeImports } from "./observe.js";
     IdentityModule,
     CartsModule,
     InventoryModule,
+    OrdersModule,
   ],
   controllers: [HealthController],
   providers: [Database],

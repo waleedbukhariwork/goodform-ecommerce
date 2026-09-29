@@ -111,6 +111,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/orders/prepare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["OrdersController_prepare"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orders/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["OrdersController_detail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/health/live": {
         parameters: {
             query?: never;
@@ -193,6 +225,22 @@ export interface components {
             status: string;
             expiresAt: string;
             items: components["schemas"]["ReservationItemDto"][];
+        };
+        OrderLineDto: {
+            slug: string;
+            name: string;
+            imagePath: string;
+            size: string;
+            quantity: number;
+            unitPriceCents: number;
+            lineTotalCents: number;
+        };
+        OrderDto: {
+            id: string;
+            status: string;
+            totalCents: number;
+            createdAt: string;
+            items: components["schemas"]["OrderLineDto"][];
         };
     };
     responses: never;
@@ -332,6 +380,44 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReservationDto"];
+                };
+            };
+        };
+    };
+    OrdersController_prepare: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderDto"];
+                };
+            };
+        };
+    };
+    OrdersController_detail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderDto"];
                 };
             };
         };

@@ -111,7 +111,12 @@ try {
     for (const size of sizes) {
       await db
         .insert(inventoryStock)
-        .values({ productId: product.id, size: size.size, available: 5 })
+        .values({
+          productId: product.id,
+          size: size.size,
+          available: 5,
+          onHand: 5,
+        })
         .onConflictDoNothing({
           target: [inventoryStock.productId, inventoryStock.size],
         });

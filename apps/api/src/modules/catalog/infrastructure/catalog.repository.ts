@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { count, eq, ilike, or } from "drizzle-orm";
 import { Database } from "../../../db/database.js";
+import type { CommerceTransaction } from "../../../db/transaction-runner.js";
 import { products } from "../../../db/schema.js";
 
 @Injectable()
@@ -28,9 +29,9 @@ export class CatalogRepository {
     return { rows, total: totals[0].value };
   }
 
-  async byId(id: string) {
+  async byId(id: string, transaction?: CommerceTransaction) {
     return (
-      await this.db.client
+      await (transaction ?? this.db.client)
         .select()
         .from(products)
         .where(eq(products.id, id))

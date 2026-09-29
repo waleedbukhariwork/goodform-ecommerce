@@ -125,10 +125,15 @@ export const inventoryStock = pgTable(
       .references(() => products.id),
     size: varchar("size", { length: 16 }).notNull(),
     available: integer("available").notNull(),
+    onHand: integer("on_hand").notNull(),
   },
   (table) => [
     uniqueIndex("inventory_product_size").on(table.productId, table.size),
     check("inventory_available_nonnegative", sql`${table.available} >= 0`),
+    check(
+      "inventory_on_hand_valid",
+      sql`${table.onHand} >= ${table.available}`,
+    ),
   ],
 );
 
@@ -169,5 +174,55 @@ export const reservationItems = pgTable(
       "reservation_item_quantity_bounded",
       sql`${table.quantity} BETWEEN 1 AND 10`,
     ),
+  ],
+);
+
+export const orders = pgTable(
+  "orders",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    reservationId: uuid("reservation_id")
+      .notNull()
+      .unique()
+      .references(() => reservations.id),
+    status: varchar("status", { length: 24 }).notNull(),
+    totalCents: bigint("total_cents", { mode: "number" }).notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    check(
+      "order_status_valid",
+      sql`${table.status} IN ('payment_pending', 'paid', 'failed', 'cancelled')`,
+    ),
+    check("order_total_nonnegative", sql`${table.totalCents} >= 0`),
+  ],
+);
+
+export const orderLines = pgTable(
+  "order_lines",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orderId: uuid("order_id")
+      .notNull()
+      .references(() => orders.id, { onDelete: "cascade" }),
+    productId: uuid("product_id")
+      .notNull()
+      .references(() => products.id),
+    slug: varchar("slug", { length: 100 }).notNull(),
+    name: varchar("name", { length: 160 }).notNull(),
+    imagePath: text("image_path").notNull(),
+    size: varchar("size", { length: 16 }).notNull(),
+    quantity: integer("quantity").notNull(),
+    unitPriceCents: integer("unit_price_cents").notNull(),
+    lineTotalCents: bigint("line_total_cents", { mode: "number" }).notNull(),
+  },
+  (table) => [
+    check("order_line_quantity_valid", sql`${table.quantity} BETWEEN 1 AND 10`),
+    check("order_line_price_nonnegative", sql`${table.unitPriceCents} >= 0`),
+    check("order_line_total_nonnegative", sql`${table.lineTotalCents} >= 0`),
   ],
 );

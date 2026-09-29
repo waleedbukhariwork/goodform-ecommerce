@@ -1,14 +1,15 @@
 import { Injectable } from "@nestjs/common";
 import { and, eq } from "drizzle-orm";
 import { Database } from "../../../db/database.js";
+import type { CommerceTransaction } from "../../../db/transaction-runner.js";
 import { cartItems } from "../../../db/schema.js";
 
 @Injectable()
 export class CartRepository {
   constructor(private readonly db: Database) {}
 
-  list(userId: string) {
-    return this.db.client
+  list(userId: string, transaction?: CommerceTransaction) {
+    return (transaction ?? this.db.client)
       .select()
       .from(cartItems)
       .where(eq(cartItems.userId, userId))

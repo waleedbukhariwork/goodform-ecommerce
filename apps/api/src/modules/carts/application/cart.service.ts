@@ -4,6 +4,8 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
+import type { CommerceTransaction } from "../../../db/transaction-runner.js";
+import type { CheckoutCart } from "../carts.types.js";
 import { CatalogService } from "../../catalog/index.js";
 import {
   calculateLine,
@@ -61,6 +63,35 @@ export class CartService {
     if (!(await this.repository.remove(ownerId, id)).length)
       throw new NotFoundException("Cart item not found");
     return this.view(ownerId);
+  }
+
+  async linesForCheckout(
+    transaction: CommerceTransaction,
+    ownerId: string,
+  ): Promise<CheckoutCart> {
+    const stored = await this.repository.list(ownerId, transaction);
+    if (!stored.length) throw new BadRequestException("Cart is empty");
+    const lines = await Promise.all(
+      stored.map(async (item) => {
+        const product = await this.catalog.snapshotById(
+          item.productId,
+          transaction,
+        );
+        if (!product.sizes.includes(item.size))
+          throw new ConflictException("Variant unavailable");
+        return {
+          productId: product.id,
+          slug: product.slug,
+          name: product.name,
+          imagePath: product.imagePath,
+          size: item.size,
+          quantity: item.quantity,
+          unitPriceCents: product.priceCents,
+          lineTotalCents: calculateLine(product.priceCents, item.quantity),
+        };
+      }),
+    );
+    return { lines, totalCents: calculateTotal(lines) };
   }
 
   async linesForReservation(ownerId: string) {

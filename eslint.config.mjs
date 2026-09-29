@@ -79,6 +79,27 @@ export default tseslint.config(
     },
   },
   {
+    files: ["apps/api/src/modules/orders/**/*.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            "**/carts/application/**",
+            "**/carts/infrastructure/**",
+            "**/carts/presentation/**",
+            "**/inventory/application/**",
+            "**/inventory/infrastructure/**",
+            "**/inventory/presentation/**",
+            "**/catalog/application/**",
+            "**/catalog/infrastructure/**",
+            "**/catalog/presentation/**",
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ["apps/api/src/modules/*/domain/**/*.ts"],
     rules: {
       "no-restricted-imports": [
