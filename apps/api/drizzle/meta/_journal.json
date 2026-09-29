@@ -8,6 +8,13 @@
       "when": 1790653137126,
       "tag": "0000_sour_diamondback",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790677690298,
+      "tag": "0001_sturdy_warbound",
+      "breakpoints": true
     }
   ]
 }

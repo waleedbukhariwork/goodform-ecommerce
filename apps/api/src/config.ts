@@ -1,5 +1,6 @@
 import { registerAs } from "@nestjs/config";
 import { readFileSync } from "node:fs";
+import { randomBytes } from "node:crypto";
 import { plainToInstance } from "class-transformer";
 import {
   IsBoolean,
@@ -13,6 +14,8 @@ import {
   Min,
   validateSync,
 } from "class-validator";
+
+const developmentSessionSecret = randomBytes(32).toString("base64url");
 
 class ApiEnvironment {
   @IsIn(["dev", "staging", "production"]) APP_ENV!:
@@ -33,6 +36,8 @@ class ApiEnvironment {
   @IsNumber() @Min(0) @Max(1) OBSERVE_SAMPLE_RATE!: number;
   @IsOptional() @Matches(/^[a-f0-9]{7,40}$/) RELEASE_SHA?: string;
   @IsOptional() @IsString() SESSION_KEY_FILE?: string;
+  @IsString() SESSION_SECRET!: string;
+  @IsOptional() @IsString() PUBLIC_ORIGIN?: string;
   @IsOptional() @Matches(/^[a-z][a-z0-9_-]{2,63}$/) MEDIA_NAMESPACE?: string;
 }
 
@@ -66,6 +71,10 @@ export function apiConfig(environment: NodeJS.ProcessEnv = process.env) {
     OBSERVE_SAMPLE_RATE: Number(environment.OBSERVE_SAMPLE_RATE ?? 0.05),
     RELEASE_SHA: environment.RELEASE_SHA,
     SESSION_KEY_FILE: environment.SESSION_KEY_FILE,
+    SESSION_SECRET: developmentSessionSecret,
+    PUBLIC_ORIGIN:
+      environment.PUBLIC_ORIGIN ??
+      (appEnv === "dev" ? "http://127.0.0.1:8080" : undefined),
     MEDIA_NAMESPACE: environment.MEDIA_NAMESPACE,
   });
   let databaseValid = false;
@@ -79,21 +88,43 @@ export function apiConfig(environment: NodeJS.ProcessEnv = process.env) {
   }
   let namespaceValid = true;
   let sessionKeyValid = true;
-  if (appEnv !== "dev") {
-    namespaceValid = Boolean(config.MEDIA_NAMESPACE?.startsWith(appEnv));
+  if (config.SESSION_KEY_FILE) {
     try {
-      sessionKeyValid = Boolean(
-        config.SESSION_KEY_FILE &&
-          readFileSync(config.SESSION_KEY_FILE, "utf8").trim().length >= 32,
-      );
+      const secret = readFileSync(config.SESSION_KEY_FILE, "utf8").trim();
+      sessionKeyValid =
+        secret.length >= 32 &&
+        [...secret].every((character) => character.charCodeAt(0) >= 32);
+      if (sessionKeyValid) config.SESSION_SECRET = secret;
     } catch {
       sessionKeyValid = false;
     }
+  }
+  if (appEnv !== "dev") {
+    namespaceValid = Boolean(config.MEDIA_NAMESPACE?.startsWith(appEnv));
+    sessionKeyValid = sessionKeyValid && Boolean(config.SESSION_KEY_FILE);
     try {
       const name = new URL(config.DATABASE_URL).pathname.slice(1);
       databaseValid = databaseValid && name.includes(appEnv);
     } catch {
       databaseValid = false;
+    }
+  }
+  let publicOriginValid = true;
+  if (config.PUBLIC_ORIGIN) {
+    try {
+      const url = new URL(config.PUBLIC_ORIGIN);
+      publicOriginValid =
+        !url.username &&
+        !url.password &&
+        url.pathname === "/" &&
+        !url.search &&
+        !url.hash &&
+        (url.protocol === "https:" ||
+          (appEnv === "dev" &&
+            url.protocol === "http:" &&
+            ["127.0.0.1", "localhost"].includes(url.hostname)));
+    } catch {
+      publicOriginValid = false;
     }
   }
   let endpointValid = true;
@@ -119,6 +150,7 @@ export function apiConfig(environment: NodeJS.ProcessEnv = process.env) {
     !databaseValid ||
     Boolean(environment.DATABASE_URL && environment.DATABASE_URL_FILE) ||
     !endpointValid ||
+    !publicOriginValid ||
     !namespaceValid ||
     !sessionKeyValid ||
     (appEnv !== "dev" && config.NODE_ENV !== "production") ||

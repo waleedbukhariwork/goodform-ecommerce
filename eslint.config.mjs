@@ -26,6 +26,23 @@ export default tseslint.config(
     },
   },
   {
+    files: [
+      "apps/api/src/modules/{catalog,carts,inventory,orders,payments}/**/*.ts",
+    ],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            "**/identity/application/**",
+            "**/identity/presentation/**",
+            "**/identity/infrastructure/**",
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ["apps/api/src/modules/*/domain/**/*.ts"],
     rules: {
       "no-restricted-imports": [

@@ -30,6 +30,7 @@ services:
       RELEASE_SHA: ${RELEASE_SHA:?}
       MEDIA_NAMESPACE: ${MEDIA_NAMESPACE:?Set isolated media namespace}
       SESSION_KEY_FILE: /run/secrets/session_key
+      PUBLIC_ORIGIN: https://${SITE_DOMAIN:?Set environment hostname}
     secrets: [database_url, session_key]
     depends_on:
       postgres: { condition: service_healthy }

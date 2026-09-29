@@ -25,6 +25,10 @@ export class ProblemFilter implements ExceptionFilter {
       (
         {
           400: "Bad Request",
+          401: "Unauthorized",
+          403: "Forbidden",
+          409: "Conflict",
+          429: "Too Many Requests",
           404: "Not Found",
           503: "Service Unavailable",
         } as Record<number, string>
@@ -33,6 +37,10 @@ export class ProblemFilter implements ExceptionFilter {
       (
         {
           400: "INVALID_INPUT",
+          401: "UNAUTHORIZED",
+          403: "FORBIDDEN",
+          409: "CONFLICT",
+          429: "RATE_LIMITED",
           404: "NOT_FOUND",
           503: "UNAVAILABLE",
         } as Record<number, string>
@@ -44,14 +52,28 @@ export class ProblemFilter implements ExceptionFilter {
         code,
       });
     }
-    response.status(status).type("application/problem+json").json({
-      type: "about:blank",
-      title,
-      status,
-      detail: title,
-      instance: request.path,
-      code,
-      requestId: request.requestId,
-    });
+    const errorBody =
+      error instanceof HttpException ? error.getResponse() : undefined;
+    const fieldErrors =
+      status === 400 &&
+      typeof errorBody === "object" &&
+      errorBody !== null &&
+      "fieldErrors" in errorBody &&
+      typeof errorBody.fieldErrors === "object"
+        ? errorBody.fieldErrors
+        : undefined;
+    response
+      .status(status)
+      .type("application/problem+json")
+      .json({
+        type: "about:blank",
+        title,
+        status,
+        detail: title,
+        instance: request.path,
+        code,
+        requestId: request.requestId,
+        ...(fieldErrors ? { fieldErrors } : {}),
+      });
   }
 }

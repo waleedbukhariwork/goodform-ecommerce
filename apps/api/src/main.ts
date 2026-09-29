@@ -1,8 +1,18 @@
 import "reflect-metadata";
 import { NestFactory } from "@nestjs/core";
-import { ValidationPipe } from "@nestjs/common";
+import {
+  BadRequestException,
+  ValidationPipe,
+  type ValidationError,
+} from "@nestjs/common";
 import { AppModule } from "./app.module.js";
-import type { Request, Response } from "express";
+import { json, type Express, type Request, type Response } from "express";
+import { toNodeHandler } from "better-auth/node";
+import { IdentityService } from "./modules/identity/index.js";
+import {
+  originCheck,
+  sessionGuard,
+} from "./modules/identity/presentation/access.middleware.js";
 import {
   assignRequestId,
   SafeLogger,
@@ -17,6 +27,7 @@ export async function bootstrap() {
   const config = apiConfig();
   const app = await NestFactory.create(AppModule, {
     logger: new SafeLogger(config),
+    bodyParser: false,
     ...(config.OBSERVE_ENABLED ? { instrument: ObserveInstrument } : {}),
   });
   app.use(
@@ -38,6 +49,40 @@ export async function bootstrap() {
       });
     },
   );
+  const expressApp = app.getHttpAdapter().getInstance() as Express;
+  const identity = app.get(IdentityService);
+  expressApp.use(
+    "/api/auth",
+    async (request: Request, response: Response, next: () => void) => {
+      try {
+        const current = await identity.sessionFromHeaders(request.headers);
+        if (
+          current &&
+          request.method === "POST" &&
+          ["/sign-in/email", "/sign-up/email"].includes(request.path)
+        )
+          await identity.revokeFromHeaders(request.headers);
+        next();
+      } catch {
+        response
+          .status(503)
+          .type("application/problem+json")
+          .json({
+            type: "about:blank",
+            title: "Service Unavailable",
+            status: 503,
+            detail: "Service Unavailable",
+            instance: request.path,
+            code: "UNAVAILABLE",
+            requestId: (request as Request & { requestId?: string }).requestId,
+          });
+      }
+    },
+  );
+  expressApp.all("/api/auth/*splat", toNodeHandler(identity.auth));
+  app.use(originCheck(config));
+  app.use(sessionGuard(identity));
+  app.use(json({ limit: "32kb" }));
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
@@ -45,6 +90,15 @@ export async function bootstrap() {
       forbidNonWhitelisted: true,
       validationError: { target: false, value: false },
       transformOptions: { enableImplicitConversion: false },
+      exceptionFactory: (errors: ValidationError[]) => {
+        const fieldErrors: Record<string, string[]> = {};
+        for (const error of errors) {
+          fieldErrors[error.property] = Object.keys(
+            error.constraints ?? {},
+          ).sort();
+        }
+        return new BadRequestException({ fieldErrors });
+      },
     }),
   );
   app.useGlobalFilters(new ProblemFilter(config));
