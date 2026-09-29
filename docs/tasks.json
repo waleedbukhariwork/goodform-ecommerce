@@ -37,7 +37,7 @@
       "id": "DELIVERY",
       "title": "Environment isolation, containers, tracing, CI and release path",
       "phase": "application",
-      "status": "in progress",
+      "status": "blocked",
       "dependsOn": [
         "FOUNDATION"
       ],
