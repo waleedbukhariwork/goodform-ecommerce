@@ -1,0 +1,110 @@
+{
+  "version": 1,
+  "activeTask": null,
+  "tasks": [
+    {
+      "id": "HARNESS",
+      "title": "Implement and verify the executable engineering harness",
+      "phase": "harness",
+      "status": "verified complete",
+      "dependsOn": [],
+      "manualChecks": [
+        "diff-review",
+        "capture-hook-live"
+      ],
+      "evidenceHash": "0149b053db1489c63e0492f1aebcedc02be8ff2823ffeabc783fdd810a7d79a7",
+      "evidence": "docs/evidence/HARNESS-9664d55c-9d5c-4515-87a9-9eb059bb62a3.json",
+      "review": "docs/reviews/HARNESS.json"
+    },
+    {
+      "id": "FOUNDATION",
+      "title": "Working Next/Nest/Drizzle catalog with local verification",
+      "phase": "application",
+      "status": "planned",
+      "dependsOn": [
+        "HARNESS"
+      ],
+      "manualChecks": [
+        "diff-review",
+        "browser-catalog",
+        "local-db-persistence"
+      ]
+    },
+    {
+      "id": "DELIVERY",
+      "title": "Environment isolation, containers, tracing, CI and release path",
+      "phase": "application",
+      "status": "planned",
+      "dependsOn": [
+        "FOUNDATION"
+      ],
+      "manualChecks": [
+        "diff-review",
+        "container-persistence",
+        "local-trace-safety",
+        "remote-ci",
+        "deployed-smoke"
+      ]
+    },
+    {
+      "id": "INFERENCE",
+      "title": "Verify funded inference access, latency, quality and retention",
+      "phase": "application",
+      "status": "planned",
+      "dependsOn": [
+        "FOUNDATION"
+      ],
+      "manualChecks": [
+        "provider-credit-coverage",
+        "six-tryon-observations"
+      ]
+    },
+    {
+      "id": "COMMERCE",
+      "title": "Accounts, ownership, cart and Stripe test checkout",
+      "phase": "application",
+      "status": "planned",
+      "dependsOn": [
+        "FOUNDATION"
+      ],
+      "manualChecks": [
+        "browser-checkout",
+        "stripe-webhooks",
+        "cross-account-denial",
+        "deployed-smoke"
+      ]
+    },
+    {
+      "id": "FITTING_ROOM",
+      "title": "Private uploads, generation jobs, comparison and measurements",
+      "phase": "application",
+      "status": "planned",
+      "dependsOn": [
+        "INFERENCE",
+        "COMMERCE"
+      ],
+      "manualChecks": [
+        "privacy-deletion",
+        "provider-failure-recovery",
+        "mobile-comparison",
+        "deployed-smoke"
+      ]
+    },
+    {
+      "id": "SUBMISSION",
+      "title": "Regression, restore rehearsal, evidence and presentation",
+      "phase": "application",
+      "status": "planned",
+      "dependsOn": [
+        "DELIVERY",
+        "FITTING_ROOM"
+      ],
+      "manualChecks": [
+        "full-journey",
+        "backup-restore",
+        "deployment-regression",
+        "known-limitations"
+      ]
+    }
+  ]
+}

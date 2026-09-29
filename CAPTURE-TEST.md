@@ -131,3 +131,66 @@ Pending: user review/trust through Codex `/hooks`, reload, and two distinct real
 Codex canary sessions. Their exact prompt/response entries and paths will be
 appended here after they occur. Do not start assignment implementation before that
 check passes. No canary entries are fabricated in this document.
+
+---
+
+## Codex live canary verification — 2026-09-29
+
+Two distinct Codex sessions produced the exact canary prompt and final response. The first ran in the VS Code extension; the second used the extension-bundled CLI in a new read-only session. Both used `gpt-6-astra`. The entries below are copied from the actual append-only logs, including their original timestamps and model labels.
+
+### 2026-09-29_02-59-34_01a0eb1a-74e1-7c31-9c2d-1d1f1c2c1771.md
+
+```text
+[LOG_ENTRY type=PROMPT num=1 session=01a0eb1a]
+timestamp: 2026-09-29T02:59:40.316Z
+model: gpt-6-sol
+timestamp_source: hook-observed
+
+# Context from my IDE setup:
+
+## Active file: .agent-logs/2026-09-29_01-09-33_fbbc4d46-14aa-4945-b7dc-ccfe0b7b511d.md
+
+## Open tabs:
+- 2026-09-29_01-09-33_fbbc4d46-14aa-4945-b7dc-ccfe0b7b511d.md: .agent-logs/2026-09-29_01-09-33_fbbc4d46-14aa-4945-b7dc-ccfe0b7b511d.md
+- 2026-09-29_00-18-16_5ee8241b-7ffc-4c8e-a50a-7f77d9b4cf15.md: .agent-logs/2026-09-29_00-18-16_5ee8241b-7ffc-4c8e-a50a-7f77d9b4cf15.md
+- 2026-09-29_00-00-59_ca5ac633-a178-4819-9022-03695cbbf3e2.md: .agent-logs/2026-09-29_00-00-59_ca5ac633-a178-4819-9022-03695cbbf3e2.md
+- 2026-09-29_02-24-30_10fce227-785d-4428-a6a9-2db662437db5.md: .agent-logs/2026-09-29_02-24-30_10fce227-785d-4428-a6a9-2db662437db5.md
+- 2026-09-29_02-31-28_a78f9b98-7bfe-4bb7-bc99-05995d80259f.md: .agent-logs/2026-09-29_02-31-28_a78f9b98-7bfe-4bb7-bc99-05995d80259f.md
+
+## My request:
+CAPTURE TEST — 8x assignment, Waleed Bukhari
+
+
+[CODEX_CAPTURE id=8afa099acfdaad56b1c6b8f384912e5ecb6d4832869ed5415052160bf44e3ac3 content=bf5c85fb75afdb3adebac3b6a3646ff121ca18cdc8cd509281b87810b16f484d]
+
+[LOG_ENTRY type=RESPONSE num=1 session=01a0eb1a]
+timestamp: 2026-09-29T02:59:43.321Z
+model: gpt-6-sol
+
+CAPTURE TEST RECEIVED
+
+[CODEX_CAPTURE id=ea36c3d2224d51707f7b2dc1b13318f7d91d7cb094d31823f8ead7be2287bcfe content=9a2e83ba86e788906be97f7582caa3f789decbad068db1853547bc93411b4ad5]
+```
+
+### 2026-09-29_03-08-19_01a0eb22-74e2-7f70-bd5b-207aa47146b6.md
+
+```text
+[LOG_ENTRY type=PROMPT num=1 session=01a0eb22]
+timestamp: 2026-09-29T03:08:22.940Z
+model: gpt-6-astra
+timestamp_source: hook-observed
+
+CAPTURE TEST — 8x assignment, Waleed Bukhari
+
+[CODEX_CAPTURE id=0df02248c5d0a3dec0b18c53cb0974c6bbe68f22a63e71568c953c11f34ba70f content=b6824d072c9ec3730442f14e18c2172728aa10a57ddb4f0978aa0b3f64f9ceeb]
+
+[LOG_ENTRY type=RESPONSE num=1 session=01a0eb22]
+timestamp: 2026-09-29T03:08:25.338Z
+model: gpt-6-astra
+
+CAPTURE TEST RECEIVED
+
+[CODEX_CAPTURE id=94516fa2dbec74d77b7192a0dd99f13578cfd5439833af313b2f6c04fbc98318 content=9bc10c972f4d6b3351c330acbccb5f78d352fdeb76e6833b8d5284496bed2e06]
+```
+
+The first CLI attempt failed because its transcript used a different `item_completed` shape. Its prompt and an incorrect empty response remain visible in its log; an append-only correction recorded the actual final. A subsequent CLI run exposed a `Text`/`text` content variant and retained an extra empty entry plus the real response. The final clean CLI canary above ran after both fixes and has exactly one prompt and one final. No historical entry was changed or removed.

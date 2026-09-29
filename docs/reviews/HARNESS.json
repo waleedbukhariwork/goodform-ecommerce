@@ -1,0 +1,14 @@
+{
+  "checks": [
+    {
+      "criterion": "diff-review",
+      "status": "pass",
+      "evidence": "Reviewed AGENTS.md, Command Code hook changes, scripts/harness, scripts/capture, task/docs split, Git hooks and workflow. git diff --check passed; node --check passed for 9 .mjs files; sh -n passed for 2 Git hooks; workflow YAML parsed. The unrelated .commandcode/taste/taste/taste.md change remains unstaged. The 42 focused harness/capture tests passed in the combined suite. No application or remote CI claim is made."
+    },
+    {
+      "criterion": "capture-hook-live",
+      "status": "pass",
+      "evidence": "CAPTURE-TEST.md has raw prompt/final entries from distinct Codex sessions .agent-logs/2026-09-29_02-59-34_01a0eb1a-74e1-7c31-9c2d-1d1f1c2c1771.md (VS Code) and .agent-logs/2026-09-29_03-08-19_01a0eb22-74e2-7f70-bd5b-207aa47146b6.md (CLI). Each has exactly one prompt and one final. Failed CLI attempts and append-only recovery remain in their logs. The updated Command Code path has fixture regression tests; re-canary it before switching tools."
+    }
+  ]
+}

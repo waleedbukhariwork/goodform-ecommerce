@@ -34,16 +34,19 @@ export function extract(text, root) {
     }
     if (entry.type !== 'event_msg') continue;
     if (item.type === 'task_started') { turnId = item.turn_id; model = undefined; }
-    const kind = item.type === 'user_message' ? 'PROMPT'
-      : item.type === 'agent_message' && item.phase === 'final_answer' && item.delivery !== 'async' ? 'RESPONSE' : null;
+    const cliItem = session.tool === 'codex-cli' && item.type === 'item_completed' ? item.item : null;
+    const kind = cliItem?.type === 'UserMessage' || item.type === 'user_message' ? 'PROMPT'
+      : cliItem?.type === 'AgentMessage' && cliItem.phase === 'final_answer'
+        || item.type === 'agent_message' && item.phase === 'final_answer' && item.delivery !== 'async' ? 'RESPONSE' : null;
     if (!kind) continue;
-    if (!validId(turnId) || typeof model !== 'string' || !model || typeof item.message !== 'string') throw new Error('UNSUPPORTED_MESSAGE_METADATA');
+    const message = cliItem ? cliItem.content?.filter((part) => ['text', 'Text'].includes(part.type)).map((part) => part.text).join('\n') : item.message;
+    if (!validId(turnId) || typeof model !== 'string' || !model || typeof message !== 'string') throw new Error('UNSUPPORTED_MESSAGE_METADATA');
     if (kind === 'PROMPT') promptNumber++;
     if (!promptNumber) throw new Error('RESPONSE_WITHOUT_PROMPT');
     const ordinalKey = `${turnId}:${kind}`;
     const ordinal = (ordinals.get(ordinalKey) || 0) + 1;
     ordinals.set(ordinalKey, ordinal);
-    records.push({ key: `${ordinalKey}:${ordinal}`, kind, number: promptNumber, timestamp: utc(entry.timestamp), model, text: item.message, turnId });
+    records.push({ key: `${ordinalKey}:${ordinal}`, kind, number: promptNumber, timestamp: utc(entry.timestamp), model, text: message, turnId });
   }
   return { session, records, turnId, model };
 }
@@ -52,7 +55,10 @@ export function withHookRecord(parsed, payload, now = new Date().toISOString()) 
   const kind = payload.hook_event_name === 'UserPromptSubmit' ? 'PROMPT' : payload.hook_event_name === 'Stop' ? 'RESPONSE' : null;
   if (!kind) return parsed;
   const text = kind === 'PROMPT' ? payload.prompt : payload.last_assistant_message;
-  if (typeof text !== 'string') throw new Error('HOOK_MESSAGE_UNAVAILABLE');
+  if (typeof text !== 'string') {
+    if (kind === 'RESPONSE' && parsed.records.some((item) => item.turnId === payload.turn_id && item.kind === 'RESPONSE')) return parsed;
+    throw new Error('HOOK_MESSAGE_UNAVAILABLE');
+  }
   if (!validId(payload.turn_id) || typeof payload.model !== 'string' || !payload.model) throw new Error('INVALID_HOOK_METADATA');
   const matching = parsed.records.filter((item) => item.turnId === payload.turn_id && item.kind === kind);
   if (matching.at(-1)?.text === text) return parsed;
@@ -96,11 +102,20 @@ export async function appendCapture(root, parsed) {
       suffix = `---\nsession_id: ${session.id}\ndate: ${session.timestamp.slice(0, 10)}\nauthor: ${JSON.stringify(config.author)}\nmodel: ${JSON.stringify(records[0].model)}\ntool: ${session.tool}\nproject: ${JSON.stringify(config.project)}\ntotal_exchanges: ${prompts.length}\nfirst_prompt_time: ${prompts[0]?.timestamp || session.timestamp}\nlast_prompt_time: ${prompts.at(-1)?.timestamp || session.timestamp}\ncapture_format: codex-append-only-v1\ncaptured_at: ${new Date().toISOString()}\n---\n\n# Session Log - ${session.timestamp.slice(0, 10)}\n\nSession: \`${session.id.slice(0, 8)}\` | Project: \`${config.project}\` | Author: \`${config.author}\`\n\n---\n`;
     }
     for (const record of records) {
-      const id = digest(`${session.id}:${record.key}`);
+      let id = digest(`${session.id}:${record.key}`);
       const content = digest(JSON.stringify([record.kind, record.model, record.text]));
       if (seen.has(id)) {
-        if (seen.get(id) !== content) throw new Error('CAPTURE_SOURCE_CHANGED');
-        continue;
+        if (seen.get(id) === content) continue;
+        const emptyCliResponse = digest(JSON.stringify(['RESPONSE', record.model, '']));
+        if (record.kind !== 'RESPONSE' || seen.get(id) !== emptyCliResponse) throw new Error('CAPTURE_SOURCE_CHANGED');
+        if ([...seen.values()].includes(content)) continue;
+        const originalId = id;
+        id = digest(`${session.id}:${record.key}:correct-empty-cli-response`);
+        if (seen.has(id)) {
+          if (seen.get(id) !== content) throw new Error('CAPTURE_SOURCE_CHANGED');
+          continue;
+        }
+        suffix += `\n[CAPTURE_CORRECTION prior_record_id=${originalId} reason=empty-cli-content]\n`;
       }
       suffix += `\n[LOG_ENTRY type=${record.kind} num=${record.number} session=${session.id.slice(0, 8)}]\ntimestamp: ${record.timestamp}\nmodel: ${record.model}\n${record.timestampSource ? `timestamp_source: ${record.timestampSource}\n` : ''}\n${record.text}\n\n[CODEX_CAPTURE id=${id} content=${content}]\n`;
       seen.set(id, content); appended++;

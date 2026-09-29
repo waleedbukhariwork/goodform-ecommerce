@@ -1,2 +1,14 @@
 # Per-machine capture state (regenerable; logs themselves in .agent-logs/ are committed)
 .commandcode/.capture-state/
+
+# Local verification artifacts and secrets; submission logs remain tracked.
+.harness/runs/
+.env
+.env.*
+!.env*.example
+node_modules/
+.next/
+dist/
+coverage/
+playwright-report/
+test-results/

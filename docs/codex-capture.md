@@ -1,8 +1,8 @@
 # Codex assignment capture
 
-Status: script tests and source recovery pass; native hook trust and two-session
-live verification are pending. Assignment implementation remains paused at this
-gate. The client explicitly requires this check before building.
+Status: native hooks were trusted and verified in two distinct Codex sessions on
+2026-09-29. See the raw canary entries appended to `CAPTURE-TEST.md`. The client
+requires this check before building.
 
 ## Actual setup
 
@@ -20,7 +20,7 @@ existing records. Commands contain no network requests and make no model calls.
 Official protocol and trust requirements:
 https://learn.chatgpt.com/docs/hooks
 
-## Activate once, then prove it
+## Activation and proof
 
 1. Open a terminal in this repository and run `codex`. Enter `/hooks`. Review and
    trust the three project hooks from `.codex/hooks.json`. Do not use a hook-trust
@@ -35,8 +35,8 @@ https://learn.chatgpt.com/docs/hooks
 
 Hook trust is stored by Codex for the exact definitions. New/changed definitions
 need review again. A repository file alone does not establish that a hook ran.
-The current already-running session may need a reload before its final response
-is captured; SessionStart recovery handles existing raw records when resumed.
+A running session may need a reload before a newly trusted hook becomes active;
+SessionStart recovery handles available raw records when resumed.
 
 ## Scope and fidelity
 
@@ -76,4 +76,9 @@ Recovery is explicit maintenance, not the automatic operating mechanism. The
 2026-09-29 recovery of session `01a0eab5-0cd5-7d33-a8f9-b0dec051cd27` captured 10
 prompts and 7 available finals. It cannot retroactively establish that capture was
 installed before earlier work or that logs were committed at that time. Existing
-Command Code logs were left untouched. Live canary proof is still required.
+Command Code logs were left untouched. Live canary proof was added to `CAPTURE-TEST.md` after activation.
+
+Codex CLI emitted `item_completed` events with a capitalized `Text` content
+variant. The capture parser now handles this variant. The failed first CLI
+attempt and its append-only correction remain in their log. The final clean
+CLI canary is a different session, with exactly one prompt and one final.

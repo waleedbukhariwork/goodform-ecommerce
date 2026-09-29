@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "requiredDocuments": [
+    "AGENTS.md",
+    "docs/scope.md",
+    "docs/architecture.md",
+    "docs/decisions.md",
+    "docs/tasks.json",
+    "docs/handoff.md",
+    "docs/harness.md",
+    "docs/task-template.md",
+    "docs/prompts/01-platform-foundation.md",
+    "docs/session-workflow.md",
+    "docs/prompts/02-delivery.md",
+    "CAPTURE-TEST.md"
+  ],
+  "harnessChecks": [
+    [
+      "node",
+      "--test",
+      "scripts/harness/tests.test.mjs",
+      "scripts/capture/codex.test.mjs"
+    ],
+    [
+      "node",
+      "scripts/harness/cli.mjs",
+      "check"
+    ]
+  ],
+  "applicationScripts": [
+    "format:check",
+    "lint",
+    "typecheck",
+    "contracts:check",
+    "test",
+    "test:integration",
+    "test:e2e",
+    "build"
+  ],
+  "commandTimeoutMs": 600000
+}

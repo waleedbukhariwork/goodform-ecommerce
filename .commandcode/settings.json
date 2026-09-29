@@ -5,8 +5,31 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node ./.commandcode/hooks/capture-turn.mjs",
+            "command": "node ./.commandcode/hooks/stop.mjs",
             "timeout": 15
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ./.commandcode/hooks/session-start.mjs",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "read|write|edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ./.commandcode/hooks/guard.mjs",
+            "timeout": 5
           }
         ]
       }

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { capture, extract } from './codex.mjs';
+import { capture, extract, withHookRecord } from './codex.mjs';
 
 const time = '2026-09-29T03:00:00.000Z';
 function setup(t) {
@@ -95,4 +95,36 @@ test('new session uses a separate file and missing model metadata is rejected', 
   const second = await capture(f.root, f.transcript); assert.notEqual(first.logFile, second.logFile);
   f.entries[2].payload.model = null; f.save();
   await assert.rejects(capture(f.root, f.transcript), /UNSUPPORTED_MESSAGE_METADATA/);
+});
+
+test('CLI item events and null Stop payload still capture the real final', async (t) => {
+  const f = setup(t); f.entries[0].payload.source = 'exec';
+  f.entries.splice(3, 6,
+    f.row('event_msg', { type: 'item_completed', turn_id: 'turn-1', item: { type: 'UserMessage', content: [{ type: 'text', text: 'CLI canary prompt' }] } }),
+    f.row('event_msg', { type: 'item_completed', turn_id: 'turn-1', item: { type: 'AgentMessage', phase: 'final_answer', content: [{ type: 'Text', text: 'CLI canary final' }] } }));
+  f.save();
+  const parsed = extract(fs.readFileSync(f.transcript, 'utf8'), f.root);
+  assert.deepEqual(parsed.records.map((record) => record.text), ['CLI canary prompt', 'CLI canary final']);
+  withHookRecord(parsed, { hook_event_name: 'Stop', turn_id: 'turn-1', model: 'model-one', last_assistant_message: null });
+  const result = await capture(f.root, f.transcript);
+  assert.equal(result.appended, 2);
+  const log = fs.readFileSync(result.logFile, 'utf8');
+  assert.ok(log.includes('CLI canary prompt'));
+  assert.ok(log.includes('CLI canary final'));
+  assert.equal(log.includes('INTERMEDIATE_NOT_FOR_LOG'), false);
+});
+
+test('repairs an earlier empty CLI capture only by appending an explicit correction', async (t) => {
+  const f = setup(t); f.entries[0].payload.source = 'exec';
+  f.entries.splice(3, 6,
+    f.row('event_msg', { type: 'item_completed', turn_id: 'turn-1', item: { type: 'UserMessage', content: [{ type: 'text', text: 'prompt' }] } }),
+    f.row('event_msg', { type: 'item_completed', turn_id: 'turn-1', item: { type: 'AgentMessage', phase: 'final_answer', content: [{ type: 'Text', text: '' }] } }));
+  f.save(); const first = await capture(f.root, f.transcript); const before = fs.readFileSync(first.logFile);
+  f.entries[4].payload.item.content[0].text = 'actual final'; f.save();
+  assert.equal((await capture(f.root, f.transcript)).appended, 1);
+  const after = fs.readFileSync(first.logFile);
+  assert.ok(after.subarray(0, before.length).equals(before));
+  assert.ok(after.toString().includes('[CAPTURE_CORRECTION'));
+  assert.ok(after.toString().includes('actual final'));
+  assert.equal((await capture(f.root, f.transcript)).appended, 0);
 });

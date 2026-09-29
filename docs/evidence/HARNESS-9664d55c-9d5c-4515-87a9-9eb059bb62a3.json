@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "id": "9664d55c-9d5c-4515-87a9-9eb059bb62a3",
+  "taskId": "HARNESS",
+  "phase": "harness",
+  "createdAt": "2026-09-29T03:17:44.492Z",
+  "commit": "340879c33f64ba6bf051c4fb4764f02670d27c63",
+  "sourceFingerprint": "e4052f4af6572e58d73aaee1db0837e767149394b98090d7f089dcf226a403c0",
+  "sourceUnchanged": true,
+  "passed": true,
+  "checks": [
+    {
+      "command": [
+        "node",
+        "--test",
+        "scripts/harness/tests.test.mjs",
+        "scripts/capture/codex.test.mjs"
+      ],
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 2469,
+      "errorCode": null
+    },
+    {
+      "command": [
+        "node",
+        "scripts/harness/cli.mjs",
+        "check"
+      ],
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 236,
+      "errorCode": null
+    }
+  ],
+  "reviewHash": "ae6bdaee78b2689af889beeae4842060a7a5f35745007223882a88b647b927c2"
+}
