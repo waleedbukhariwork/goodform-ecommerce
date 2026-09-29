@@ -14,6 +14,7 @@ content. Historical .agent-logs entries remain untouched.
 | D07 | Routine implementation choices delegated within approved boundaries | User approved; no blanket authority for spending or scope changes |
 | D08 | Executable harness before the foundation milestone | Current user request |
 | D09 | No co-author lines; immutable submission logs | Existing AGENTS.md rules preserved |
+| D10 | INFERENCE probe targets Google GA `virtual-try-on-001`; account region remains undecided | 2026-09-29: Google model card and SDK confirm capability and supported regions; no project, credentials, credit proof or region were present. No billable call authorized. |
 
 New decisions record the date, concrete reason, approving instruction, and effect
 on time/scope. Do not relitigate approved choices without new evidence. A local

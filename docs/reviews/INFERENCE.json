@@ -1,0 +1,19 @@
+{
+  "checks": [
+    {
+      "criterion": "provider-credit-coverage",
+      "status": "pending",
+      "evidence": "Local environment inspection found no Google project or region setting, credential reference, ADC file, gcloud CLI, API-enablement evidence, credit balance or eligible billing proof. Google's public list price is $0.06 per output image, or $0.36 for six planned one-image calls; account-specific coverage was not observed. No billable call was made."
+    },
+    {
+      "criterion": "six-tryon-observations",
+      "status": "pending",
+      "evidence": "Zero of six generations were attempted. There are no measured latencies, provider statuses, artifacts for human review, defect notes, two-preview reuse observation, actual charges, or provider request IDs. The gate fails in the current environment because access, credit coverage and retention details are unverified."
+    }
+  ],
+  "feasibility": {
+    "verdict": "fail in current environment",
+    "decidingThresholds": ["credit coverage unverified", "six observations absent", "account-specific retention duration unknown"],
+    "providerCalls": 0
+  }
+}

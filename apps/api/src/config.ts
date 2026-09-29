@@ -1,4 +1,5 @@
 import { registerAs } from "@nestjs/config";
+import { inferenceConfig } from "./modules/inference/infrastructure/inference.config.js";
 import { readFileSync } from "node:fs";
 import { randomBytes } from "node:crypto";
 import { plainToInstance } from "class-transformer";
@@ -46,6 +47,7 @@ class ApiEnvironment {
 }
 
 export function apiConfig(environment: NodeJS.ProcessEnv = process.env) {
+  inferenceConfig(environment);
   const appEnv = environment.APP_ENV ?? "dev";
   const observeEnabled =
     environment.OBSERVE_ENABLED === undefined

@@ -273,3 +273,8 @@ export const checkoutRateLimits = pgTable(
   },
   (table) => [check("checkout_rate_count_positive", sql`${table.count} >= 1`)],
 );
+
+export const inferenceDailyCalls = pgTable("inference_daily_calls", {
+  key: varchar("key", { length: 64 }).primaryKey(),
+  count: integer("count").notNull(),
+});
