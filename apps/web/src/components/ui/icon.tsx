@@ -4,6 +4,7 @@ type Name =
   | "arrow-left"
   | "arrow-right"
   | "bag"
+  | "orders"
   | "user"
   | "search"
   | "check"
@@ -43,6 +44,14 @@ export function Icon({
         <>
           <path d="M4 8h16l-1 12H5L4 8Z" />
           <path d="M9 9V6a3 3 0 0 1 6 0v3" />
+        </>
+      )}
+      {name === "orders" && (
+        <>
+          <path d="M8 7h8" />
+          <path d="M8 12h8" />
+          <path d="M8 17h5" />
+          <path d="M6 4h12v16H6z" />
         </>
       )}
       {name === "user" && (

@@ -7,6 +7,7 @@ import { apiFetch } from "../../lib/transport";
 
 export type Cart = components["schemas"]["CartDto"];
 export type Order = components["schemas"]["OrderDto"];
+export type OrderList = components["schemas"]["OrderListDto"];
 
 async function privateHeaders() {
   const incoming = await headers();
@@ -22,6 +23,13 @@ async function privateHeaders() {
 
 export async function getCart() {
   return (await apiFetch<Cart>("/api/v1/cart", {
+    origin: internalApiOrigin(),
+    headers: await privateHeaders(),
+  }))!;
+}
+
+export async function listOrders() {
+  return (await apiFetch<OrderList>("/api/v1/orders", {
     origin: internalApiOrigin(),
     headers: await privateHeaders(),
   }))!;

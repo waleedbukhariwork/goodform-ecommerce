@@ -2,12 +2,18 @@ import { Controller, Get, Param, Req } from "@nestjs/common";
 import { ApiOkResponse, ApiTags } from "@nestjs/swagger";
 import type { OwnerRequest } from "../../identity/index.js";
 import { OrdersService } from "../application/orders.service.js";
-import { OrderDto, OrderParam } from "./orders.dto.js";
+import { OrderDto, OrderListDto, OrderParam } from "./orders.dto.js";
 
 @ApiTags("orders")
 @Controller("api/v1/orders")
 export class OrdersController {
   constructor(private readonly orders: OrdersService) {}
+
+  @Get()
+  @ApiOkResponse({ type: OrderListDto })
+  list(@Req() request: OwnerRequest) {
+    return this.orders.list(request.ownerId!);
+  }
 
   @Get(":id")
   @ApiOkResponse({ type: OrderDto })

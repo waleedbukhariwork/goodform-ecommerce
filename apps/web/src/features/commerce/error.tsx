@@ -12,7 +12,8 @@ export function Failure({
     | "checkout"
     | "verification"
     | "reset"
-    | "password";
+    | "password"
+    | "profile";
 }) {
   const requestId = error instanceof ApiError ? error.requestId : undefined;
   const status = error instanceof ApiError ? error.status : undefined;
@@ -33,15 +34,19 @@ export function Failure({
             ? "We could not send a reset link just now. Wait a minute and try again."
             : context === "password"
               ? "That reset link could not update your password. Request a new link and try again."
-              : context === "auth"
-                ? "We could not sign you in with those details. Check them and try again."
-                : context === "checkout"
-                  ? "Checkout could not be prepared. Your cart is still here; please review it before trying again."
-                  : status === 401
-                    ? "Please sign in to continue."
-                    : status === 409
-                      ? "That choice is no longer available. Review your cart and try again."
-                      : "We could not complete that request. Please try again.";
+              : context === "profile"
+                ? status === 400
+                  ? "Those details were not accepted. Check them and try again."
+                  : "We could not update your account. Please try again."
+                : context === "auth"
+                  ? "We could not sign you in with those details. Check them and try again."
+                  : context === "checkout"
+                    ? "Checkout could not be prepared. Your cart is still here; please review it before trying again."
+                    : status === 401
+                      ? "Please sign in to continue."
+                      : status === 409
+                        ? "That choice is no longer available. Review your cart and try again."
+                        : "We could not complete that request. Please try again.";
   return (
     <div role="alert" className="notice error-notice">
       <p>{message}</p>

@@ -13,10 +13,11 @@ On the staging site, as last checked from this repository:
 | Shopper action | State |
 | --- | --- |
 | Browse eight garments, search, open a product and its size chart | Working over HTTPS |
-| Create an account, sign in, sign out | Working. Signup on this host now expects an email confirmation |
-| Keep a private cart and see server-calculated prices in cents | Implemented. Anonymous cart requests return 401 |
-| Pay with Stripe test mode | Test key and webhook secret are installed. An unsigned webhook returns 400, so the secret is loaded.
-| Receive the verification or password-reset email | Not confirmed. Resend accepts the key, and `contact.waleedbukhari.com` is verified in Resend. The image currently serving staging does not call the verification sender. See [Known limits](#known-limits) |
+| Create an account, sign in, and open your profile | After sign-in the account page shows your name and email, lets you edit the name or password, and signs you out. Guests still see sign-in and create account |
+| Keep a private cart and see server-calculated prices in cents | Implemented. Anonymous cart requests return 401. A confirmed payment removes those garments from the cart. A cancelled checkout leaves the cart unchanged |
+| Review your orders | Signed-in shoppers have an orders list and an order page. Stripe returns to that order page, which asks the server to confirm payment |
+| Pay with Stripe test mode | Test key and webhook secret are installed. An unsigned webhook returns 400, so the secret is loaded. No completed test payment has been recorded |
+| Receive the verification or password-reset email | The staging API now registers the verification sender. An empty resend request returns 400 `VALIDATION_ERROR`, so the endpoint is on. No delivered Resend message has been observed yet |
 | Upload a photo and generate a try-on | Not built |
 
 Prices, stock, and payment state are decided by the API. The browser cannot mark an order paid.
@@ -256,6 +257,8 @@ Do not print the secret files. The API rejects a live Stripe secret key. It acce
 
 ## Known limits
 
+- **A delivered email has not been observed.** The verification callback is on the hook Better Auth actually calls. Signup or sign-in on this host should send. Until Resend shows a Goodform message, do not call mail delivered.
+- **Checkout is not demonstrated end to end.** The webhook secret loads. A browser payment that ends as a paid order has not been recorded.
 - **The fitting room must not be described as available.** The Google probe is disabled. No try-on call has been made.
 
 ## Where to read next

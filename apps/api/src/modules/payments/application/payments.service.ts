@@ -239,8 +239,23 @@ export class PaymentsService {
       eventType,
     });
     if (!outcome) return;
-    const status = await this.orders.transition(transaction, orderId, outcome);
-    if (status !== "paid" && (outcome === "failed" || outcome === "cancelled"))
+    const transitioned = await this.orders.transition(
+      transaction,
+      orderId,
+      outcome,
+    );
+    if (!transitioned)
+      throw new BadRequestException("Checkout session mismatch");
+    if (transitioned.changed && transitioned.status === "paid")
+      await this.orders.releasePurchasedCart(
+        transaction,
+        order.userId,
+        orderId,
+      );
+    if (
+      transitioned.status !== "paid" &&
+      (outcome === "failed" || outcome === "cancelled")
+    )
       await this.inventory.restoreFailedCheckout(
         transaction,
         order.reservationId,

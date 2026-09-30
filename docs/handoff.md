@@ -1,3 +1,9 @@
+## Staging verification-mail deploy — 2026-09-30
+
+- Status: deployed on the existing staging host. `APP_ENV` remains staging. This was not a production promotion. SSM `fb5665f7-75e4-451b-a7fa-5fe89c34d30e` passed dry-run, backup `/var/lib/goodform/staging/backups/20260930T045551Z-3397bac7f1db128e5b6887593086d23411ea5f59.sql.gz`, migration, catalog seed, and the host HTTPS catalog smoke. API and web containers became healthy.
+- Release label `3397bac7f1db128e5b6887593086d23411ea5f59`. API digest `sha256:e46a512507e300439fd03a337cdfb724274336699f376d00f0a779a05e799726`. Web digest `sha256:d0585e0159adbb2f31de1d8c865e69b65f94c835671355e47cadacd12e7d9115`. The API image was built from the verification-hook sources in `18580c0`; that commit's API files are unchanged in `3397bac`. The web image was built from `3397bac`.
+- Signup verification is registered on `emailVerification.sendVerificationEmail`. A public POST to `/api/auth/send-verification-email` with an empty body returned 400 `VALIDATION_ERROR`, so the endpoint is enabled. The previous image returned `VERIFICATION_EMAIL_NOT_ENABLED` because the callback sat on `emailAndPassword`. No address was submitted in that check, and no delivered Resend message has been observed. `ENABLE_MAIL` and `ENABLE_STRIPE_TEST` stayed on. Public checks after the release: catalog 200 with eight products, anonymous cart 401, home 200 on retry after one client timeout.
+
 ## Staging Resend mail — 2026-09-30
 
 - Status: deployed on the existing staging host. `APP_ENV` remains staging. `ENABLE_MAIL=true` and `MAIL_FROM=Goodform <reply@contact.waleedbukhari.com>` are in the private staging env file. The Resend key is a host file, mode 640, group 1000. Dev still cannot send.

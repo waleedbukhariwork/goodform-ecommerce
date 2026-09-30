@@ -38,6 +38,19 @@ export class OrdersService {
     return this.repository.byId(transaction, id);
   }
 
+  async list(ownerId: string) {
+    const rows = await this.repository.listByOwner(ownerId);
+    return {
+      items: rows.map(({ order, itemCount }) => ({
+        id: order.id,
+        status: order.status,
+        totalCents: order.totalCents,
+        createdAt: order.createdAt.toISOString(),
+        itemCount,
+      })),
+    };
+  }
+
   async detail(ownerId: string, id: string) {
     const record = await this.repository.byOwner(ownerId, id);
     if (!record) throw new NotFoundException("Order not found");
@@ -64,5 +77,15 @@ export class OrdersService {
     next: Exclude<OrderStatus, "payment_pending">,
   ) {
     return this.repository.transition(transaction, id, next);
+  }
+
+  /** Runs in the payment transaction, and only for lines on this order. */
+  async releasePurchasedCart(
+    transaction: CommerceTransaction,
+    ownerId: string,
+    orderId: string,
+  ) {
+    const lines = await this.repository.lines(transaction, orderId);
+    await this.carts.removePurchased(transaction, ownerId, lines);
   }
 }

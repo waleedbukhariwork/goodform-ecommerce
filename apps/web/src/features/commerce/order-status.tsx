@@ -1,16 +1,25 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { apiFetch } from "../../lib/transport";
 import { formatMoney } from "../../lib/money";
 import { ProductMedia } from "../../components/ui/product-media";
 import { Failure } from "./error";
+import { orderStatusLabel } from "./order-labels";
 import type { Order } from "./api";
 
-export function OrderStatus({ initial }: { initial: Order }) {
+export function OrderStatus({
+  initial,
+  checkout,
+}: {
+  initial: Order;
+  checkout: "return" | "cancelled" | null;
+}) {
   const [order, setOrder] = useState(initial);
   const [error, setError] = useState<unknown>(null);
   const [busy, setBusy] = useState(false);
   const [slow, setSlow] = useState(false);
+  const reconciled = useRef(false);
   useEffect(() => {
     if (order.status !== "payment_pending") return;
     const timer = window.setInterval(async () => {
@@ -51,20 +60,21 @@ export function OrderStatus({ initial }: { initial: Order }) {
       setSlow(false);
     }
   }
-  const label =
-    order.status === "paid"
-      ? "Payment confirmed"
-      : order.status === "payment_pending"
-        ? "Waiting for payment confirmation"
-        : order.status === "failed"
-          ? "Payment failed"
-          : "Checkout cancelled";
+  useEffect(() => {
+    if (!checkout || reconciled.current) return;
+    if (initial.status !== "payment_pending") return;
+    reconciled.current = true;
+    void reconcile();
+  }, [checkout, initial.status]);
+  const label = orderStatusLabel(order.status);
   const message =
     order.status === "paid"
-      ? "Your order is confirmed by the store."
+      ? checkout === "return"
+        ? "Your order is confirmed by the store. These garments have been removed from your cart."
+        : "Your order is confirmed by the store."
       : order.status === "payment_pending"
         ? "Your checkout has been received. We are checking the server for payment confirmation; you can leave this page and return later."
-        : "This order was not paid. Your account remains available, and you can review your cart.";
+        : "This order was not paid. The garments are still in your cart.";
   return (
     <>
       <div
@@ -107,6 +117,21 @@ export function OrderStatus({ initial }: { initial: Order }) {
               : "This page also checks automatically every few seconds."}
           </p>
         </>
+      )}
+      {order.status === "paid" && (
+        <div className="account-actions">
+          <Link className="button" href="/orders">
+            Your orders
+          </Link>
+          <Link className="button secondary" href="/">
+            Continue shopping
+          </Link>
+        </div>
+      )}
+      {(order.status === "failed" || order.status === "cancelled") && (
+        <Link className="button" href="/cart">
+          Return to cart
+        </Link>
       )}
       {error !== null && <Failure error={error} />}
     </>

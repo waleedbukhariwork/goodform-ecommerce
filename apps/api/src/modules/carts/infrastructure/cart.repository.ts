@@ -52,4 +52,37 @@ export class CartRepository {
       .where(and(eq(cartItems.userId, userId), eq(cartItems.id, id)))
       .returning({ id: cartItems.id });
   }
+
+  /** Removes only the purchased quantity. A later addition of the same variant stays. */
+  async consumePurchased(
+    transaction: CommerceTransaction,
+    userId: string,
+    productId: string,
+    size: string,
+    quantity: number,
+  ) {
+    const row = (
+      await transaction
+        .select()
+        .from(cartItems)
+        .where(
+          and(
+            eq(cartItems.userId, userId),
+            eq(cartItems.productId, productId),
+            eq(cartItems.size, size),
+          ),
+        )
+        .for("update")
+        .limit(1)
+    )[0];
+    if (!row) return;
+    if (row.quantity <= quantity) {
+      await transaction.delete(cartItems).where(eq(cartItems.id, row.id));
+      return;
+    }
+    await transaction
+      .update(cartItems)
+      .set({ quantity: row.quantity - quantity })
+      .where(eq(cartItems.id, row.id));
+  }
 }

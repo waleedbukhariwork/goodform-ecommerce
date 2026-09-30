@@ -8,6 +8,8 @@ const labels: Record<string, string> = {
   name: "name",
   email: "email address",
   password: "password",
+  currentPassword: "current password",
+  newPassword: "new password",
   confirmation: "password confirmation",
 };
 

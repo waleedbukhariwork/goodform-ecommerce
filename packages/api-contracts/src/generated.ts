@@ -111,6 +111,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["OrdersController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/orders/{id}": {
         parameters: {
             query?: never;
@@ -241,6 +257,16 @@ export interface components {
             status: string;
             expiresAt: string;
             items: components["schemas"]["ReservationItemDto"][];
+        };
+        OrderSummaryDto: {
+            id: string;
+            status: string;
+            totalCents: number;
+            createdAt: string;
+            itemCount: number;
+        };
+        OrderListDto: {
+            items: components["schemas"]["OrderSummaryDto"][];
         };
         OrderLineDto: {
             slug: string;
@@ -401,6 +427,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReservationDto"];
+                };
+            };
+        };
+    };
+    OrdersController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderListDto"];
                 };
             };
         };

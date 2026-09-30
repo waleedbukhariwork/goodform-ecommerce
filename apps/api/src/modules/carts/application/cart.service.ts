@@ -94,6 +94,21 @@ export class CartService {
     return { lines, totalCents: calculateTotal(lines) };
   }
 
+  async removePurchased(
+    transaction: CommerceTransaction,
+    ownerId: string,
+    lines: { productId: string; size: string; quantity: number }[],
+  ) {
+    for (const line of lines)
+      await this.repository.consumePurchased(
+        transaction,
+        ownerId,
+        line.productId,
+        line.size,
+        line.quantity,
+      );
+  }
+
   async linesForReservation(ownerId: string) {
     const cart = await this.view(ownerId);
     if (!cart.items.length) throw new BadRequestException("Cart is empty");

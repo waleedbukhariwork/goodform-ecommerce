@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { ApiError, apiFetch } from "../../lib/transport";
 import { Failure } from "./error";
 import { useFormValidation } from "../../components/ui/form-validation";
+import { useSession } from "./session";
 
 /** Mirrors the server window so the first paint does not flash an enabled button. */
 const MAIL_COOLDOWN_SECONDS = 60;
@@ -24,6 +25,7 @@ async function fetchCooldown(email: string): Promise<number> {
 
 export function AccountForm() {
   const router = useRouter();
+  const { refresh } = useSession();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [busy, setBusy] = useState(false);
   const [slow, setSlow] = useState(false);
@@ -101,7 +103,7 @@ export function AccountForm() {
         setCooldown(await fetchCooldown(email));
         return;
       }
-      router.push("/cart");
+      await refresh();
       router.refresh();
     } catch (cause) {
       setError(cause);
@@ -335,37 +337,5 @@ export function AccountForm() {
         />
       )}
     </section>
-  );
-}
-
-export function SignOut() {
-  const router = useRouter();
-  const [error, setError] = useState<unknown>(null);
-  const [busy, setBusy] = useState(false);
-  async function signOut() {
-    if (busy) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await apiFetch("/api/auth/sign-out", { method: "POST" });
-      router.push("/");
-      router.refresh();
-    } catch (cause) {
-      setError(cause);
-      setBusy(false);
-    }
-  }
-  return (
-    <>
-      <button
-        type="button"
-        className="secondary"
-        disabled={busy}
-        onClick={signOut}
-      >
-        {busy ? "Signing out…" : "Sign out"}
-      </button>
-      {error !== null && <Failure error={error} />}
-    </>
   );
 }

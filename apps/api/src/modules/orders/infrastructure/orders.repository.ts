@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { Database } from "../../../db/database.js";
 import type { CommerceTransaction } from "../../../db/transaction-runner.js";
 import { orderLines, orders } from "../../../db/schema.js";
@@ -56,6 +56,46 @@ export class OrdersRepository {
     );
   }
 
+  async listByOwner(userId: string) {
+    const rows = await this.db.client
+      .select()
+      .from(orders)
+      .where(eq(orders.userId, userId))
+      .orderBy(desc(orders.createdAt))
+      .limit(50);
+    if (!rows.length) return [];
+    const lines = await this.db.client
+      .select({
+        orderId: orderLines.orderId,
+        quantity: orderLines.quantity,
+      })
+      .from(orderLines)
+      .where(
+        inArray(
+          orderLines.orderId,
+          rows.map((row) => row.id),
+        ),
+      );
+    const counts = new Map<string, number>();
+    for (const line of lines)
+      counts.set(line.orderId, (counts.get(line.orderId) ?? 0) + line.quantity);
+    return rows.map((order) => ({
+      order,
+      itemCount: counts.get(order.id) ?? 0,
+    }));
+  }
+
+  lines(transaction: CommerceTransaction, orderId: string) {
+    return transaction
+      .select({
+        productId: orderLines.productId,
+        size: orderLines.size,
+        quantity: orderLines.quantity,
+      })
+      .from(orderLines)
+      .where(eq(orderLines.orderId, orderId));
+  }
+
   async byOwner(userId: string, id: string) {
     const order = (
       await this.db.client
@@ -88,11 +128,12 @@ export class OrdersRepository {
     )[0];
     if (!order) return null;
     const status = transitionOrderStatus(order.status as OrderStatus, next);
-    if (status !== order.status)
+    const changed = status !== order.status;
+    if (changed)
       await transaction
         .update(orders)
         .set({ status, updatedAt: new Date() })
         .where(eq(orders.id, id));
-    return status;
+    return { status, changed };
   }
 }
