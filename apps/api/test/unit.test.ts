@@ -42,6 +42,26 @@ test("staging requires its own database, namespace and session key", () => {
     writeFileSync(key, "staging-only-session-key-with-32-chars");
     writeFileSync(database, "postgres://user:pass@db/goodform_staging");
     assert.equal(apiConfig(base).APP_ENV, "staging");
+    assert.equal(apiConfig(base).MAIL_ENABLED, false);
+    assert.equal(
+      apiConfig({
+        ...base,
+        MAIL_ENABLED: "true",
+        MAIL_FROM: "Goodform <reply@example.com>",
+        RESEND_API_KEY: "re_testkey",
+      }).MAIL_ENABLED,
+      true,
+    );
+    assert.equal(
+      apiConfig({
+        APP_ENV: "dev",
+        DATABASE_URL: "postgres://user:pass@localhost/goodform_dev",
+        MAIL_ENABLED: "true",
+        MAIL_FROM: "Goodform <reply@example.com>",
+        RESEND_API_KEY: "re_testkey",
+      }).MAIL_ENABLED,
+      false,
+    );
     assert.throws(
       () => apiConfig({ ...base, NODE_ENV: "development" }),
       /Invalid API runtime configuration/,

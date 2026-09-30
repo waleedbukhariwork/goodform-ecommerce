@@ -2,6 +2,7 @@ import { Inject, Injectable } from "@nestjs/common";
 import type { ConfigType } from "@nestjs/config";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { betterAuth } from "better-auth";
+import { APIError } from "better-auth/api";
 import { fromNodeHeaders } from "better-auth/node";
 import type { IncomingHttpHeaders } from "node:http";
 import { runtimeConfig } from "../../../config.js";
@@ -14,11 +15,34 @@ import {
   verification,
 } from "../../../db/schema.js";
 import {
+  type MailMessage,
   type MailSender,
   ResendMailSender,
   resetMail,
   verificationMail,
 } from "../infrastructure/mail.sender.js";
+import {
+  type MailKind,
+  MailCooldownError,
+} from "../infrastructure/mail-throttle.js";
+
+async function deliver(mail: MailSender, kind: MailKind, message: MailMessage) {
+  try {
+    await mail.send(kind, message);
+  } catch (error) {
+    if (error instanceof MailCooldownError) {
+      throw APIError.from("TOO_MANY_REQUESTS", {
+        code: "MAIL_COOLDOWN",
+        message:
+          "You can request one email per minute. Please wait, then try again.",
+      });
+    }
+    throw APIError.from("SERVICE_UNAVAILABLE", {
+      code: "MAIL_DELIVERY_FAILED",
+      message: "We could not send that email. Please try again in a moment.",
+    });
+  }
+}
 
 function createIdentityAuth(
   db: Database,
@@ -36,27 +60,34 @@ function createIdentityAuth(
       provider: "pg",
       schema: { user, session, account, verification, rateLimit },
     }),
-    emailAndPassword: {
-      enabled: true,
-      // Only enforced where mail actually delivers. Requiring verification
-      // without a working send path would lock every new account out with no
-      // recovery, so dev and staging keep the frictionless path.
-      requireEmailVerification: mailEnforced,
-      autoSignIn: !mailEnforced,
+    emailVerification: {
+      // Better Auth sends only from this callback. The emailAndPassword hook
+      // is not called during signup, which left the verification screen up
+      // with no message delivered.
+      sendOnSignUp: mailEnforced,
+      sendOnSignIn: mailEnforced,
       sendVerificationEmail: async (payload: {
         user: { email: string };
         url: string;
       }) => {
-        await mail.send("verification", {
+        await deliver(mail, "verification", {
           ...verificationMail(payload.url),
           to: payload.user.email,
         });
       },
+    },
+    emailAndPassword: {
+      enabled: true,
+      // Only enforced where mail is enabled. Dev never enables it. Staging and
+      // production enable it only through the release overlay, so a host that
+      // cannot send cannot lock a new account out with no recovery.
+      requireEmailVerification: mailEnforced,
+      autoSignIn: !mailEnforced,
       sendResetPassword: async (payload: {
         user: { email: string };
         url: string;
       }) => {
-        await mail.send("reset", {
+        await deliver(mail, "reset", {
           ...resetMail(payload.url),
           to: payload.user.email,
         });

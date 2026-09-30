@@ -297,7 +297,7 @@ h1 {
 .button,
 button:not(.plain-button):not(.size-option):not(.step-button):not(
     .account-tab
-  ) {
+  ):not(.link-button) {
   display: inline-flex;
   min-height: 48px;
   align-items: center;
@@ -318,7 +318,7 @@ button:not(.plain-button):not(.size-option):not(.step-button):not(
 .button:hover,
 button:not(.plain-button):not(.size-option):not(.step-button):not(
     .account-tab
-  ):hover {
+  ):not(.link-button):hover {
   transform: translateY(-1px);
 }
 .button.secondary,
@@ -326,6 +326,34 @@ button.secondary {
   background: transparent !important;
   color: var(--ink) !important;
   border-color: var(--line-strong) !important;
+}
+.button.secondary:hover,
+button.secondary:hover {
+  background: var(--surface-muted) !important;
+  transform: none;
+}
+button.link-button {
+  display: inline-flex;
+  width: auto;
+  min-height: 44px;
+  align-items: center;
+  justify-content: flex-start;
+  margin-top: var(--space-4);
+  padding: var(--space-2) 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--accent);
+  font-weight: 700;
+  line-height: var(--leading-heading);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transform: none;
+}
+button.link-button:hover {
+  background: transparent;
+  color: var(--ink);
+  transform: none;
 }
 .plain-button {
   display: inline-flex;
@@ -769,6 +797,7 @@ td {
   max-width: 50ch;
 }
 .account-panel {
+  width: min(100%, 480px);
   padding: var(--space-6);
   border: 1px solid var(--line);
   background: var(--surface);
@@ -797,9 +826,23 @@ td {
   display: grid;
   gap: var(--space-5);
 }
-.account-panel form button {
+.account-panel form button,
+.account-actions > button,
+.account-panel > button.secondary,
+.account-panel > a.button {
   width: 100%;
+}
+.account-panel form button {
   margin-top: var(--space-2);
+}
+.account-actions {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+}
+.account-panel > button.secondary,
+.account-panel > a.button {
+  margin-top: var(--space-3);
 }
 .signout-panel {
   margin-top: var(--space-8);
@@ -951,6 +994,9 @@ td {
   .search-row {
     flex-direction: column;
   }
+  .search-row button {
+    width: 100%;
+  }
 }
 .catalog-filters {
   display: flex;
@@ -1013,32 +1059,4 @@ td {
   .brand-mark {
     display: none;
   }
-}
-
-.link-button {
-  background: none;
-  border: 0;
-  color: var(--accent);
-  padding: 0.6rem 0;
-  min-height: 44px;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-.link-button:hover {
-  background: none;
-  color: var(--ink);
-}
-a.action {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  margin-top: 0.5rem;
-  padding: 0.8rem 1.2rem;
-  background: var(--ink);
-  color: #fff;
-  text-decoration: none;
-}
-a.action:hover {
-  background: var(--accent);
 }

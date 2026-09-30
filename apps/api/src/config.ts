@@ -61,12 +61,10 @@ export function apiConfig(environment: NodeJS.ProcessEnv = process.env) {
         : environment.OBSERVE_ENABLED === "false"
           ? false
           : undefined;
-  // Mail is production-only by decision: real sends from staging would burn the
-  // provider's free tier and deliver to real inboxes. Verification is only
-  // enforced where mail actually sends, because an unverifiable account is a
-  // permanent lockout with no recovery.
-  const mailEnabled =
-    appEnv === "production" && environment.MAIL_ENABLED === "true";
+  // Dev never sends. Staging and production send only when MAIL_ENABLED=true,
+  // which the release overlay sets explicitly. Verification stays tied to that
+  // flag so an environment that cannot send cannot lock new accounts out.
+  const mailEnabled = appEnv !== "dev" && environment.MAIL_ENABLED === "true";
   const config = plainToInstance(ApiEnvironment, {
     APP_ENV: appEnv,
     NODE_ENV:

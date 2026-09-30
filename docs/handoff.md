@@ -1,8 +1,20 @@
+## Staging Resend mail — 2026-09-30
+
+- Status: deployed on the existing staging host. `APP_ENV` remains staging. `ENABLE_MAIL=true` and `MAIL_FROM=Goodform <reply@contact.waleedbukhari.com>` are in the private staging env file. The Resend key is a host file, mode 640, group 1000. Dev still cannot send.
+- The API image is an uncommitted change on top of commit `2dbf1774b997f6eb2eaffe21a552125a372ca740`: staging honors `MAIL_ENABLED=true`. Digest `sha256:60f3b1fe73a48cba89fa955b173d0b279781dd7e569a323824c22c662d8a1db2`. The web digest is unchanged, `sha256:ec2f3cc19fba099ffa4acfbf6e8733a098e72f4f94f0d4e24f7567d88917ccf7`. SSM `a7d09e62-ebe9-433b-b6ac-73c1255e3bd0` passed dry-run, backup, migration, seed, and the host HTTPS catalog smoke. The API became healthy, so the key and sender passed startup validation.
+- No verification or reset message has been sent or observed. A new signup on this host now requires the email link before sign-in. `pnpm --filter @goodform/api test` passed the mail-gate unit test locally.
+
+## Staging release of commit 2dbf177 — 2026-09-30
+
+- Status: deployed to the existing staging host. `https://goodform.waleedbukhari.com` remains `APP_ENV=staging`. This was not a production promotion. `ENABLE_MAIL` was unset at this release. `ENABLE_STRIPE_TEST=true` was set afterward; the test key and webhook secret are host files mode 640, group 1000, and are not recorded here. SSM `d991986f-ea87-448f-a398-edd474ac51d0` redeployed the same image digests. An unsigned webhook POST then returned 400, which shows the webhook secret is loaded. A paid Checkout Session has not been observed.
+- Source commit `2dbf1774b997f6eb2eaffe21a552125a372ca740`. ECR manifests: API `sha256:0f9051fe89e690168816dd3db23648a04c52e5a830ed56c7a6ae0f0e532ae13f`, web `sha256:ec2f3cc19fba099ffa4acfbf6e8733a098e72f4f94f0d4e24f7567d88917ccf7`. Host file sync SSM `e0fe9e51-e5bd-4f06-9b91-201c2b881f9f` copied `release.sh` and `infra/compose.mail.yml` and confirmed mail and Stripe were not enabled. Deploy SSM `5118a521-57dd-4fe0-9c2f-2a0bbae34be2` passed dry-run, backup `/var/lib/goodform/staging/backups/20260930T032236Z-2dbf1774b997f6eb2eaffe21a552125a372ca740.sql.gz`, migration, catalog seed, and the host HTTPS catalog smoke.
+- Public checks from this machine after the release: home 200, catalog 200 with eight products, anonymous cart 401 with a request id, `/reset-password` 200, and the account page includes the forgot-password control. The previous staging release was commit `1aece69`.
+
 ## Frontend form and search refinement — 2026-09-30
 
 - Status: **in progress** under DESIGN. Account sign-in, signup, reset request and password reset now use branded inline field errors, focus the first invalid input, and clear errors as entries become valid. Catalog Search is disabled for empty or whitespace-only queries and trims submitted queries. The pinned Better Auth signup response token is used to distinguish a new session from an email-verification step; HttpOnly cookies cannot be inspected by client JavaScript.
 - Local checks passed: `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, `pnpm contracts:check`, `pnpm test`, `pnpm build`, `node scripts/harness/cli.mjs check`, and `git diff --check`. A focused headless Chrome check passed empty/invalid/corrected account and reset inputs plus Search button state and trimmed navigation. The catalog browser check used a temporary local catalog-only response; it does not prove API integration. Full integration/e2e suites and DESIGN harness verification remain outstanding.
-- Staging deployment requested after the focused checks. Release images and public smoke are pending in this handoff section until actually observed.
+- Staging deployment of this work is recorded in the 2dbf177 release section above. That public smoke observed the reset page and account forgot-password control on the staging host.
 
 ## DESIGN implementation and staging request — 2026-09-30
 

@@ -50,7 +50,7 @@ export function ResetPassword() {
       <div className="account-panel">
         <h2>Password updated</h2>
         <p role="status">You can now sign in with your new password.</p>
-        <a className="action" href="/account">
+        <a className="button" href="/account">
           Go to sign in
         </a>
       </div>
@@ -89,7 +89,7 @@ export function ResetPassword() {
           {busy ? "Updating…" : "Update password"}
         </button>
       </form>
-      {error !== null && <Failure error={error} context="auth" />}
+      {error !== null && <Failure error={error} context="password" />}
     </div>
   );
 }

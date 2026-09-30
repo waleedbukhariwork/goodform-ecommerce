@@ -106,7 +106,14 @@ export class ResendMailSender implements MailSender {
     ]);
     // A failed send must surface: silently dropping a verification email would
     // create an account the owner can never activate, with no recovery.
-    if (result.error) throw new Error("Mail delivery failed");
+    if (result.error) {
+      const status =
+        "statusCode" in result.error ? result.error.statusCode : "unknown";
+      console.error(
+        JSON.stringify({ event: "mail_delivery_failed", status, kind }),
+      );
+      throw new Error("Mail delivery failed");
+    }
   }
 }
 

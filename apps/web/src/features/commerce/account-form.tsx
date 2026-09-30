@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { apiFetch } from "../../lib/transport";
+import { ApiError, apiFetch } from "../../lib/transport";
 import { Failure } from "./error";
 import { useFormValidation } from "../../components/ui/form-validation";
 
@@ -122,10 +122,9 @@ export function AccountForm() {
         <p className="muted">
           Nothing arrived? Check your spam folder, or request another link.
         </p>
-        <div className="account-switch" role="group" aria-label="Next action">
+        <div className="account-actions" role="group" aria-label="Next action">
           <button
             type="button"
-            className="account-tab"
             disabled={busy || cooldown > 0}
             aria-describedby={cooldown > 0 ? "resend-cooldown" : undefined}
             onClick={async () => {
@@ -146,8 +145,17 @@ export function AccountForm() {
                 setCooldown(MAIL_COOLDOWN_SECONDS);
                 setResendCount((count) => count + 1);
               } catch (cause) {
-                setError(cause);
-                setCooldown(await fetchCooldown(pendingEmail));
+                const wait = await fetchCooldown(pendingEmail);
+                if (
+                  wait > 0 ||
+                  (cause instanceof ApiError && cause.status === 429)
+                ) {
+                  setCooldown(wait > 0 ? wait : MAIL_COOLDOWN_SECONDS);
+                  setError(null);
+                } else {
+                  setError(cause);
+                  setCooldown(wait);
+                }
               } finally {
                 setBusy(false);
               }
@@ -161,7 +169,7 @@ export function AccountForm() {
           </button>
           <button
             type="button"
-            className="account-tab"
+            className="secondary"
             onClick={() => {
               setPendingEmail(null);
               setError(null);
@@ -178,7 +186,7 @@ export function AccountForm() {
               : "For your security you can request one link per minute."}
           </p>
         )}
-        {error !== null && <Failure error={error} context="auth" />}
+        {error !== null && <Failure error={error} context="verification" />}
       </section>
     );
   }
@@ -222,7 +230,7 @@ export function AccountForm() {
         >
           Back to sign in
         </button>
-        {error !== null && <Failure error={error} context="auth" />}
+        {error !== null && <Failure error={error} context="reset" />}
       </section>
     );
   }
