@@ -15,6 +15,7 @@ import {
 } from "../../../db/schema.js";
 import {
   type MailSender,
+  ResendMailSender,
   resetMail,
   verificationMail,
 } from "../infrastructure/mail.sender.js";
@@ -88,7 +89,7 @@ export class IdentityService {
   constructor(
     db: Database,
     @Inject(runtimeConfig.KEY) config: ConfigType<typeof runtimeConfig>,
-    private readonly mail: MailSender,
+    @Inject(ResendMailSender) private readonly mail: MailSender,
   ) {
     if (!config.PUBLIC_ORIGIN) throw new Error("PUBLIC_ORIGIN is required");
     this.publicOrigin = config.PUBLIC_ORIGIN;
