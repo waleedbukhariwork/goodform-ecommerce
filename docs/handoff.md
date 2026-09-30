@@ -1,3 +1,9 @@
+## Staging profile, orders, and paid-cart release — 2026-09-30
+
+- Status: deployed on the existing staging host. `APP_ENV` remains staging. This was not a production promotion. SSM `bd01b7b7-ed00-434a-a4bd-fe17a6e9f35a` passed dry-run, backup `/var/lib/goodform/staging/backups/20260930T052344Z-3397bac7f1db128e5b6887593086d23411ea5f59.sql.gz`, migration, catalog seed, and the host HTTPS catalog smoke.
+- Release label `3397bac7f1db128e5b6887593086d23411ea5f59`. The images also contain the uncommitted account profile, orders list, Stripe return reconcile, and paid-cart quantity removal. API digest `sha256:d497b254e925648e59bbcc2e7e809f701427a78bde8ab9e2b7f7d158d1de2328`. Web digest `sha256:c65930dc22ec33568d6768d740c24685b043c8c4c29d86f880b9a6e6103e6dbf`.
+- Public checks after the release: home 200, catalog 200 with eight products, anonymous cart 401, anonymous orders API 401, orders page 200, account page 200. A signed-in profile edit and a completed Stripe test payment were not exercised from this session. `ENABLE_MAIL` and `ENABLE_STRIPE_TEST` stayed on.
+
 ## Staging verification-mail deploy — 2026-09-30
 
 - Status: deployed on the existing staging host. `APP_ENV` remains staging. This was not a production promotion. SSM `fb5665f7-75e4-451b-a7fa-5fe89c34d30e` passed dry-run, backup `/var/lib/goodform/staging/backups/20260930T045551Z-3397bac7f1db128e5b6887593086d23411ea5f59.sql.gz`, migration, catalog seed, and the host HTTPS catalog smoke. API and web containers became healthy.
