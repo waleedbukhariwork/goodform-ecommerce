@@ -152,8 +152,7 @@ export function AccountForm() {
         <h2>Check your email</h2>
         <p role="status">
           We sent a verification link to {pendingEmail}. Open it to confirm your
-          email. You will see a confirmation, then the collection, with your
-          name in the header.
+          email.
         </p>
         <p className="muted">
           Nothing arrived? Check your spam folder, or request another link.
