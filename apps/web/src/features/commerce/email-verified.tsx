@@ -29,7 +29,7 @@ export function EmailVerified({ error }: { error: string | null }) {
     if (!confirmed) return;
     const timer = window.setTimeout(() => {
       setLeaving(true);
-      router.push("/");
+      router.replace("/");
     }, CONTINUE_MS);
     return () => window.clearTimeout(timer);
   }, [confirmed, router]);
@@ -105,7 +105,12 @@ export function EmailVerified({ error }: { error: string | null }) {
           Hello, {firstName}. {user.email} is verified. Your name is in the
           header, and your cart stays with this account.
         </p>
-        <Link className="button" href="/" onClick={() => setLeaving(true)}>
+        <Link
+          className="button"
+          href="/"
+          replace
+          onClick={() => setLeaving(true)}
+        >
           Continue to the collection
         </Link>
         <p className="muted" aria-live="polite">

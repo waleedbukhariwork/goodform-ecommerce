@@ -10,9 +10,11 @@ import { Failure } from "./error";
 import { useSession, type AccountUser } from "./session";
 
 export function AccountExperience() {
-  const { user, loading } = useSession();
-  if (loading) return <AccountPending />;
-  if (!user) return <GuestAccount />;
+  const { user, loading, departure } = useSession();
+  // A successful sign-in must keep this form on screen until the collection
+  // route replaces it. Swapping to the profile first is the flicker.
+  if (loading && departure === "idle") return <AccountPending />;
+  if (!user || departure === "home-in") return <GuestAccount />;
   return <AccountHome user={user} />;
 }
 
@@ -54,7 +56,7 @@ function GuestAccount() {
 
 function AccountHome({ user }: { user: AccountUser }) {
   const router = useRouter();
-  const { replaceUser, refresh } = useSession();
+  const { replaceUser, refresh, beginRouteHome } = useSession();
   const [editing, setEditing] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -129,9 +131,10 @@ function AccountHome({ user }: { user: AccountUser }) {
     setError(null);
     try {
       await apiFetch("/api/auth/sign-out", { method: "POST" });
-      replaceUser(null);
-      router.push("/");
-      router.refresh();
+      // Keep this profile mounted until the collection route commits.
+      // Clearing the session here would paint the sign-in form first.
+      beginRouteHome("home-out");
+      router.replace("/");
     } catch (cause) {
       setError(cause);
       setBusy(false);

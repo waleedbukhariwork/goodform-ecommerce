@@ -1,6 +1,17 @@
+## Sign-in and sign-out landing — 2026-09-30
+
+- Status: **in progress** under DESIGN, local only. Not deployed. No harness `verify` or `task finish`.
+- Sign-in and a signup that creates a session now replace the route with the collection. The account form stays in place until that route commits, so the profile does not appear in between. Sign-out keeps the profile mounted until the collection commits, then clears the header name before paint. Email confirmation uses the same replace navigation.
+
+## Staging verification landing and cart quantity — 2026-09-30
+
+- Status: deployed on the existing staging host. `APP_ENV` remains staging. This was not a production promotion. SSM `1e6008a2-e66f-46c6-a1a9-15280bf50f8a` passed dry-run, backup `/var/lib/goodform/staging/backups/20260930T165018Z-dffb9eadc46d14914c3031b97d561d2922217603.sql.gz`, migration, catalog seed, and the host HTTPS catalog smoke. API and web containers became healthy. No harness `verify` or `task finish`.
+- Release label `dffb9eadc46d14914c3031b97d561d2922217603`. API digest `sha256:e84fad3f433a002ed94d1c44a3bb371b40288e6a9b2c2473f86e2f364fbcf3bb`. Web digest `sha256:0d6c53f4b30c2dd19ec91d6807d624da7a150bd42aa9b25449b6ad011b17ba65`.
+- Public checks after the release: home 200, catalog 200 with eight products, anonymous cart 401, `/email-verified` 200 with the confirmation copy, `/reset-password` 200 with the invalid-link copy. A delivered verification email and a completed Stripe test payment were not exercised from this session. `ENABLE_MAIL` and `ENABLE_STRIPE_TEST` stayed on.
+
 ## Verification landing, reset, and cart quantity — 2026-09-30
 
-- Status: **in progress** under DESIGN. Not deployed. No harness `verify` or `task finish`.
+- Status: **in progress** under DESIGN. The staging release of this work is recorded in the section above. No harness `verify` or `task finish`.
 - Email confirmation now uses Better Auth `autoSignInAfterVerification` and callback `/email-verified`. The page states that the email is confirmed, shows the account name in the existing header, then continues to the collection. Expired or already-used links stay on that page with a route back to the account. Signup, resend, and an unverified sign-in all use that callback. An unverified sign-in opens the existing check-email panel.
 - Password reset still opens `/reset-password` after Better Auth validates the token. A missing or `INVALID_TOKEN` link explains itself and offers a new request. A successful reset revokes other sessions and asks the shopper to sign in; the reset response does not create a session.
 - Product “Add to cart” adds the selected quantity onto the saved size, capped at 10. The cart stepper still sets an absolute quantity. The line amount and summary follow that quantity from the last server unit price, then the server cart replaces them. Stripe Checkout already charges `unit_amount` times `quantity` and names the line `garment / size`. Order detail already showed size; it now also shows the unit price. The orders list now includes each line’s name, size, and quantity.

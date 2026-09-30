@@ -29,7 +29,7 @@ async function fetchCooldown(email: string): Promise<number> {
 
 export function AccountForm() {
   const router = useRouter();
-  const { refresh } = useSession();
+  const { refresh, beginRouteHome, cancelRouteHome } = useSession();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [busy, setBusy] = useState(false);
   const [slow, setSlow] = useState(false);
@@ -85,6 +85,7 @@ export function AccountForm() {
     setBusy(true);
     setSlow(false);
     setError(null);
+    let openingHome = false;
     const form = new FormData(event.currentTarget);
     const email = String(form.get("email") ?? "");
     const password = String(form.get("password") ?? "");
@@ -114,8 +115,16 @@ export function AccountForm() {
         setCooldown(await fetchCooldown(email));
         return;
       }
-      await refresh();
-      router.refresh();
+      beginRouteHome("home-in");
+      openingHome = true;
+      const signedIn = await refresh();
+      if (!signedIn) {
+        cancelRouteHome();
+        openingHome = false;
+        setError(new ApiError(0, "Session unavailable", crypto.randomUUID()));
+        return;
+      }
+      router.replace("/");
     } catch (cause) {
       if (
         mode === "signin" &&
@@ -126,10 +135,14 @@ export function AccountForm() {
         setCooldown(await fetchCooldown(email));
         return;
       }
+      if (openingHome) cancelRouteHome();
+      openingHome = false;
       setError(cause);
     } finally {
-      setBusy(false);
-      setSlow(false);
+      if (!openingHome) {
+        setBusy(false);
+        setSlow(false);
+      }
     }
   }
 

@@ -5,8 +5,10 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useState,
 } from "react";
+import { usePathname } from "next/navigation";
 
 export type AccountUser = {
   id: string;
@@ -15,11 +17,17 @@ export type AccountUser = {
   emailVerified: boolean;
 };
 
+type Departure = "idle" | "home-in" | "home-out";
+
 type SessionState = {
   user: AccountUser | null;
   loading: boolean;
+  /** Set while sign-in or sign-out is navigating to the collection. */
+  departure: Departure;
   refresh: () => Promise<AccountUser | null>;
   replaceUser: (user: AccountUser | null) => void;
+  beginRouteHome: (next: Exclude<Departure, "idle">) => void;
+  cancelRouteHome: () => void;
 };
 
 const SessionContext = createContext<SessionState | null>(null);
@@ -51,8 +59,10 @@ async function readSession(): Promise<AccountUser | null> {
 }
 
 export function SessionProvider({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const [user, setUser] = useState<AccountUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [departure, setDeparture] = useState<Departure>("idle");
   const refresh = useCallback(async () => {
     try {
       const next = await readSession();
@@ -66,13 +76,34 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const beginRouteHome = useCallback((next: Exclude<Departure, "idle">) => {
+    setDeparture(next);
+  }, []);
+  const cancelRouteHome = useCallback(() => setDeparture("idle"), []);
+
   useEffect(() => {
     void refresh();
   }, [refresh]);
 
+  // Clear the signed-in name in the same commit as the collection, before paint,
+  // so sign-out does not show the account form and then the home page.
+  useLayoutEffect(() => {
+    if (pathname !== "/" || departure === "idle") return;
+    if (departure === "home-out") setUser(null);
+    setDeparture("idle");
+  }, [pathname, departure]);
+
   return (
     <SessionContext.Provider
-      value={{ user, loading, refresh, replaceUser: setUser }}
+      value={{
+        user,
+        loading,
+        departure,
+        refresh,
+        replaceUser: setUser,
+        beginRouteHome,
+        cancelRouteHome,
+      }}
     >
       {children}
     </SessionContext.Provider>
