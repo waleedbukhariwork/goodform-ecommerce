@@ -3,6 +3,7 @@ export class ApiError extends Error {
     public readonly status: number,
     message: string,
     public readonly requestId?: string,
+    public readonly code?: string,
   ) {
     super(message);
   }
@@ -35,10 +36,12 @@ export async function apiFetch<T>(
       : null;
     if (!response.ok) {
       const message = body?.title ?? body?.message ?? "Service unavailable";
+      const code = typeof body?.code === "string" ? body.code : undefined;
       throw new ApiError(
         response.status,
         message,
         body?.requestId ?? response.headers.get("x-request-id") ?? requestId,
+        code,
       );
     }
     if (!contentType.includes("json") || body === null)

@@ -734,6 +734,16 @@ td {
   margin: 0;
   color: var(--ink-muted);
 }
+.order-lines {
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--ink-muted);
+  font-size: var(--text-sm);
+}
+.order-lines li + li {
+  margin-top: var(--space-1);
+}
 .order-row strong {
   font-variant-numeric: tabular-nums;
 }
@@ -825,6 +835,22 @@ td {
   padding: var(--space-6);
   border: 1px solid var(--line);
   background: var(--surface);
+}
+.confirm-panel {
+  width: min(100%, 520px);
+}
+.confirm-mark {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  margin: 0 0 var(--space-4);
+  place-items: center;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  color: var(--success);
+}
+.confirm-panel > a.button {
+  margin-top: var(--space-5);
 }
 .account-switch {
   display: grid;

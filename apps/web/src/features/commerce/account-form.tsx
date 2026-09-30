@@ -8,6 +8,10 @@ import { useSession } from "./session";
 
 /** Mirrors the server window so the first paint does not flash an enabled button. */
 const MAIL_COOLDOWN_SECONDS = 60;
+/** Better Auth redirects the verification link here after it marks the email confirmed. */
+const VERIFIED_PATH = "/email-verified";
+/** Mail delivery is bounded at 8s on the server; keep the browser request open past that. */
+const MAIL_REQUEST_TIMEOUT_MS = 12_000;
 
 async function fetchCooldown(email: string): Promise<number> {
   try {
@@ -64,6 +68,7 @@ export function AccountForm() {
       await apiFetch("/api/auth/request-password-reset", {
         method: "POST",
         headers: { "content-type": "application/json" },
+        timeoutMs: MAIL_REQUEST_TIMEOUT_MS,
         body: JSON.stringify({ email, redirectTo: "/reset-password" }),
       });
       setResetNotice(true);
@@ -85,14 +90,20 @@ export function AccountForm() {
     const password = String(form.get("password") ?? "");
     const body =
       mode === "signup"
-        ? { name: String(form.get("name") ?? ""), email, password }
-        : { email, password };
+        ? {
+            name: String(form.get("name") ?? ""),
+            email,
+            password,
+            callbackURL: VERIFIED_PATH,
+          }
+        : { email, password, callbackURL: VERIFIED_PATH };
     try {
       const response = await apiFetch<{ token: string | null }>(
         "/api/auth/" + (mode === "signup" ? "sign-up/email" : "sign-in/email"),
         {
           method: "POST",
           headers: { "content-type": "application/json" },
+          timeoutMs: MAIL_REQUEST_TIMEOUT_MS,
           body: JSON.stringify(body),
         },
       );
@@ -106,6 +117,15 @@ export function AccountForm() {
       await refresh();
       router.refresh();
     } catch (cause) {
+      if (
+        mode === "signin" &&
+        cause instanceof ApiError &&
+        cause.code === "EMAIL_NOT_VERIFIED"
+      ) {
+        setPendingEmail(email);
+        setCooldown(await fetchCooldown(email));
+        return;
+      }
       setError(cause);
     } finally {
       setBusy(false);
@@ -118,8 +138,9 @@ export function AccountForm() {
       <section className="account-panel" aria-label="Verify your email">
         <h2>Check your email</h2>
         <p role="status">
-          We sent a verification link to {pendingEmail}. Open it to finish
-          creating your account.
+          We sent a verification link to {pendingEmail}. Open it to confirm your
+          email. You will see a confirmation, then the collection, with your
+          name in the header.
         </p>
         <p className="muted">
           Nothing arrived? Check your spam folder, or request another link.
@@ -137,9 +158,10 @@ export function AccountForm() {
                 await apiFetch("/api/auth/send-verification-email", {
                   method: "POST",
                   headers: { "content-type": "application/json" },
+                  timeoutMs: MAIL_REQUEST_TIMEOUT_MS,
                   body: JSON.stringify({
                     email: pendingEmail,
-                    callbackURL: "/account",
+                    callbackURL: VERIFIED_PATH,
                   }),
                 });
                 // The server owns the cooldown; re-read it rather than

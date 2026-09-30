@@ -23,12 +23,18 @@ export class OrderDto {
   @ApiProperty({ type: String }) createdAt!: string;
   @ApiProperty({ type: [OrderLineDto] }) items!: OrderLineDto[];
 }
+export class OrderLinePreviewDto {
+  @ApiProperty({ type: String }) name!: string;
+  @ApiProperty({ type: String }) size!: string;
+  @ApiProperty({ type: Number }) quantity!: number;
+}
 export class OrderSummaryDto {
   @ApiProperty({ type: String }) id!: string;
   @ApiProperty({ type: String }) status!: string;
   @ApiProperty({ type: Number }) totalCents!: number;
   @ApiProperty({ type: String }) createdAt!: string;
   @ApiProperty({ type: Number }) itemCount!: number;
+  @ApiProperty({ type: [OrderLinePreviewDto] }) lines!: OrderLinePreviewDto[];
 }
 export class OrderListDto {
   @ApiProperty({ type: [OrderSummaryDto] }) items!: OrderSummaryDto[];

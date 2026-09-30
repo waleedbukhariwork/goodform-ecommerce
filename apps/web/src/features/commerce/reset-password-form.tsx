@@ -1,18 +1,27 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 import { apiFetch } from "../../lib/transport";
 import { Failure } from "../../features/commerce/error";
 import { useFormValidation } from "../../components/ui/form-validation";
 
-export function ResetPassword() {
+export function ResetPassword({
+  token,
+  error,
+}: {
+  token: string;
+  error: string | null;
+}) {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
-  const [error, setError] = useState<unknown>(null);
+  const [failure, setFailure] = useState<unknown>(null);
   const validation = useFormValidation("reset");
+  const linkInvalid = error === "INVALID_TOKEN" || token.length === 0;
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (busy || !validation.validate(event.currentTarget)) return;
+    if (busy || linkInvalid || !validation.validate(event.currentTarget))
+      return;
     const form = new FormData(event.currentTarget);
     const password = String(form.get("password") ?? "");
     const confirmation = String(form.get("confirmation") ?? "");
@@ -26,40 +35,71 @@ export function ResetPassword() {
       return;
     }
     setBusy(true);
-    setError(null);
+    setFailure(null);
     try {
       await apiFetch("/api/auth/reset-password", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           newPassword: password,
-          // Read by Better Auth from the link; never accepted from the client.
-          token: new URLSearchParams(window.location.search).get("token") ?? "",
+          token,
         }),
       });
       setDone(true);
     } catch (cause) {
-      setError(cause);
+      setFailure(cause);
     } finally {
       setBusy(false);
     }
   }
 
+  if (linkInvalid) {
+    return (
+      <section
+        className="account-panel confirm-panel"
+        aria-label="Reset link problem"
+      >
+        <h2>This reset link cannot be used</h2>
+        <p role="alert">
+          The link is missing, invalid, or expired. Request a new one. Reset
+          links last about an hour and work once.
+        </p>
+        <Link className="button" href="/account">
+          Request a new link
+        </Link>
+      </section>
+    );
+  }
+
   if (done) {
     return (
-      <div className="account-panel">
+      <section
+        className="account-panel confirm-panel"
+        aria-label="Password updated"
+      >
         <h2>Password updated</h2>
-        <p role="status">You can now sign in with your new password.</p>
-        <a className="button" href="/account">
-          Go to sign in
-        </a>
-      </div>
+        <p role="status">
+          Your password is saved and other sessions for this account were signed
+          out. Sign in with the new password. Your name will appear in the
+          header.
+        </p>
+        <Link className="button" href="/account">
+          Sign in
+        </Link>
+      </section>
     );
   }
 
   return (
-    <div className="account-panel">
+    <section
+      className="account-panel confirm-panel"
+      aria-label="Choose a new password"
+    >
       <h2>Choose a new password</h2>
+      <p className="muted">
+        Use at least 8 characters. This replaces the password on the account
+        that requested the link.
+      </p>
       <form onSubmit={submit} aria-busy={busy} noValidate>
         <label className="form-field">
           New password
@@ -89,7 +129,7 @@ export function ResetPassword() {
           {busy ? "Updating…" : "Update password"}
         </button>
       </form>
-      {error !== null && <Failure error={error} context="password" />}
-    </div>
+      {failure !== null && <Failure error={failure} context="password" />}
+    </section>
   );
 }

@@ -66,6 +66,9 @@ function createIdentityAuth(
       // with no message delivered.
       sendOnSignUp: mailEnforced,
       sendOnSignIn: mailEnforced,
+      // The link is a top-level navigation. Creating the session here is what
+      // puts the account name in the header after the shopper confirms.
+      autoSignInAfterVerification: true,
       sendVerificationEmail: async (payload: {
         user: { email: string };
         url: string;
@@ -83,6 +86,7 @@ function createIdentityAuth(
       // cannot send cannot lock a new account out with no recovery.
       requireEmailVerification: mailEnforced,
       autoSignIn: !mailEnforced,
+      revokeSessionsOnPasswordReset: true,
       sendResetPassword: async (payload: {
         user: { email: string };
         url: string;

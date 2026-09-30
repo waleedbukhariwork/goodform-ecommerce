@@ -25,6 +25,24 @@ test("transport handles JSON, 204 and server problems", async () => {
         error.status === 400 &&
         error.requestId === "r1",
     );
+    globalThis.fetch = async () =>
+      new Response(
+        JSON.stringify({
+          message: "Email not verified",
+          code: "EMAIL_NOT_VERIFIED",
+        }),
+        {
+          status: 403,
+          headers: { "content-type": "application/json" },
+        },
+      );
+    await assert.rejects(
+      apiFetch("/api/auth/sign-in/email"),
+      (error: unknown) =>
+        error instanceof ApiError &&
+        error.status === 403 &&
+        error.code === "EMAIL_NOT_VERIFIED",
+    );
     globalThis.fetch = async () => new Response("broken", { status: 502 });
     await assert.rejects(
       apiFetch("/api/v1/products"),

@@ -258,12 +258,18 @@ export interface components {
             expiresAt: string;
             items: components["schemas"]["ReservationItemDto"][];
         };
+        OrderLinePreviewDto: {
+            name: string;
+            size: string;
+            quantity: number;
+        };
         OrderSummaryDto: {
             id: string;
             status: string;
             totalCents: number;
             createdAt: string;
             itemCount: number;
+            lines: components["schemas"]["OrderLinePreviewDto"][];
         };
         OrderListDto: {
             items: components["schemas"]["OrderSummaryDto"][];

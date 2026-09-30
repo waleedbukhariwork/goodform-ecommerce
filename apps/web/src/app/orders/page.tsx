@@ -46,6 +46,15 @@ export default async function OrdersPage() {
                   {" · "}
                   {order.itemCount} {order.itemCount === 1 ? "item" : "items"}
                 </p>
+                {order.lines.length > 0 && (
+                  <ul className="order-lines">
+                    {order.lines.map((line, index) => (
+                      <li key={`${line.name}-${line.size}-${index}`}>
+                        {line.name}, size {line.size} × {line.quantity}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
               <strong>{formatMoney(order.totalCents)}</strong>
             </article>

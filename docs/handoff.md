@@ -1,3 +1,11 @@
+## Verification landing, reset, and cart quantity — 2026-09-30
+
+- Status: **in progress** under DESIGN. Not deployed. No harness `verify` or `task finish`.
+- Email confirmation now uses Better Auth `autoSignInAfterVerification` and callback `/email-verified`. The page states that the email is confirmed, shows the account name in the existing header, then continues to the collection. Expired or already-used links stay on that page with a route back to the account. Signup, resend, and an unverified sign-in all use that callback. An unverified sign-in opens the existing check-email panel.
+- Password reset still opens `/reset-password` after Better Auth validates the token. A missing or `INVALID_TOKEN` link explains itself and offers a new request. A successful reset revokes other sessions and asks the shopper to sign in; the reset response does not create a session.
+- Product “Add to cart” adds the selected quantity onto the saved size, capped at 10. The cart stepper still sets an absolute quantity. The line amount and summary follow that quantity from the last server unit price, then the server cart replaces them. Stripe Checkout already charges `unit_amount` times `quantity` and names the line `garment / size`. Order detail already showed size; it now also shows the unit price. The orders list now includes each line’s name, size, and quantity.
+- Local checks that passed: `pnpm typecheck`, `pnpm --filter @goodform/web test`, `pnpm --filter @goodform/api test`, `pnpm format:check`, `pnpm lint`, and `pnpm contracts:check`. A browser pass of a real verification email, password-reset mail, and Stripe payment was not run in this session.
+
 ## Staging profile, orders, and paid-cart release — 2026-09-30
 
 - Status: deployed on the existing staging host. `APP_ENV` remains staging. This was not a production promotion. SSM `bd01b7b7-ed00-434a-a4bd-fe17a6e9f35a` passed dry-run, backup `/var/lib/goodform/staging/backups/20260930T052344Z-3397bac7f1db128e5b6887593086d23411ea5f59.sql.gz`, migration, catalog seed, and the host HTTPS catalog smoke.

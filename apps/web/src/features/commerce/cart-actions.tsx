@@ -46,7 +46,13 @@ export function CartActions({ cart }: { cart: Cart }) {
         quantity === 0
           ? previous.items.filter((entry) => entry.id !== item.id)
           : previous.items.map((entry) =>
-              entry.id === item.id ? { ...entry, quantity } : entry,
+              entry.id === item.id
+                ? {
+                    ...entry,
+                    quantity,
+                    lineTotalCents: entry.unitPriceCents * quantity,
+                  }
+                : entry,
             ),
     }));
     try {
@@ -172,11 +178,7 @@ export function CartActions({ cart }: { cart: Cart }) {
                   </div>
                   {item.quantity >= 10 && <p>Maximum quantity reached.</p>}
                 </div>
-                <strong>
-                  {pendingLine === item.id
-                    ? "Updating…"
-                    : formatMoney(item.lineTotalCents)}
-                </strong>
+                <strong>{formatMoney(item.lineTotalCents)}</strong>
               </article>
             ))}
           </div>
@@ -200,8 +202,12 @@ export function CartActions({ cart }: { cart: Cart }) {
         <aside className="checkout-summary" aria-label="Order summary">
           <h2>Order summary</h2>
           <div className="summary-line">
-            <span>{pendingLine ? "Last confirmed total" : "Total"}</span>
-            <strong>{formatMoney(confirmed.totalCents)}</strong>
+            <span>{pendingLine ? "Confirming total" : "Total"}</span>
+            <strong>
+              {formatMoney(
+                shown.items.reduce((sum, item) => sum + item.lineTotalCents, 0),
+              )}
+            </strong>
           </div>
           <p className="reference-note">
             The server confirms every price and checks stock when you continue.

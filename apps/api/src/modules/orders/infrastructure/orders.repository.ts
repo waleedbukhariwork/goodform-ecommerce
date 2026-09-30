@@ -67,6 +67,8 @@ export class OrdersRepository {
     const lines = await this.db.client
       .select({
         orderId: orderLines.orderId,
+        name: orderLines.name,
+        size: orderLines.size,
         quantity: orderLines.quantity,
       })
       .from(orderLines)
@@ -75,13 +77,27 @@ export class OrdersRepository {
           orderLines.orderId,
           rows.map((row) => row.id),
         ),
-      );
+      )
+      .orderBy(orderLines.id);
     const counts = new Map<string, number>();
-    for (const line of lines)
+    const previews = new Map<
+      string,
+      { name: string; size: string; quantity: number }[]
+    >();
+    for (const line of lines) {
       counts.set(line.orderId, (counts.get(line.orderId) ?? 0) + line.quantity);
+      const preview = previews.get(line.orderId) ?? [];
+      preview.push({
+        name: line.name,
+        size: line.size,
+        quantity: line.quantity,
+      });
+      previews.set(line.orderId, preview);
+    }
     return rows.map((order) => ({
       order,
       itemCount: counts.get(order.id) ?? 0,
+      lines: previews.get(order.id) ?? [],
     }));
   }
 

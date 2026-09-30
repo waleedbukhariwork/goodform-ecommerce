@@ -93,7 +93,8 @@ export function OrderStatus({
             <div>
               <h3>{item.name}</h3>
               <p>
-                Size {item.size} · Quantity {item.quantity}
+                Size {item.size} · Quantity {item.quantity} ·{" "}
+                {formatMoney(item.unitPriceCents)} each
               </p>
             </div>
             <strong>{formatMoney(item.lineTotalCents)}</strong>

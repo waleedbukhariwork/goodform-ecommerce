@@ -41,12 +41,13 @@ export class OrdersService {
   async list(ownerId: string) {
     const rows = await this.repository.listByOwner(ownerId);
     return {
-      items: rows.map(({ order, itemCount }) => ({
+      items: rows.map(({ order, itemCount, lines }) => ({
         id: order.id,
         status: order.status,
         totalCents: order.totalCents,
         createdAt: order.createdAt.toISOString(),
         itemCount,
+        lines,
       })),
     };
   }
