@@ -1,7 +1,9 @@
 ## Sign-in and sign-out landing — 2026-09-30
 
-- Status: **in progress** under DESIGN, local only. Not deployed. No harness `verify` or `task finish`.
-- Sign-in and a signup that creates a session now replace the route with the collection. The account form stays in place until that route commits, so the profile does not appear in between. Sign-out keeps the profile mounted until the collection commits, then clears the header name before paint. Email confirmation uses the same replace navigation.
+- Status: deployed on the existing staging host. `APP_ENV` remains staging. This was not a production promotion. SSM `7e640dd7-bee7-4557-a636-4207f445583d` passed dry-run, backup `/var/lib/goodform/staging/backups/20260930T182707Z-0395eee32d36047ccc4a2f5399c7d7a7dab20493.sql.gz`, migration, catalog seed, and the host HTTPS catalog smoke. No harness `verify` or `task finish`.
+- Release label `0395eee32d36047ccc4a2f5399c7d7a7dab20493`. The API image is unchanged, digest `sha256:e84fad3f433a002ed94d1c44a3bb371b40288e6a9b2c2473f86e2f364fbcf3bb`. Web digest `sha256:dfd41da80ec7ce20c483f055fd2d6b7edc30ffd392ec45be8e5286d0d7c36276`.
+- Sign-in and a signup that creates a session replace the route with the collection. The account form stays in place until that route commits. Sign-out keeps the profile mounted until the collection commits, then clears the header name before paint.
+- Public checks after the release: home 200, account 200, `/email-verified` 200, catalog 200 with eight products, anonymous cart 401. The account page script includes the new navigation state. A signed-in browser pass of sign-in and sign-out was not exercised from this session.
 
 ## Staging verification landing and cart quantity — 2026-09-30
 
