@@ -2,6 +2,7 @@ import { Inject, Injectable } from "@nestjs/common";
 import type { ConfigType } from "@nestjs/config";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { betterAuth } from "better-auth";
+import { eq } from "drizzle-orm";
 import { APIError } from "better-auth/api";
 import { fromNodeHeaders } from "better-auth/node";
 import type { IncomingHttpHeaders } from "node:http";
@@ -14,6 +15,7 @@ import {
   user,
   verification,
 } from "../../../db/schema.js";
+import { accountStateFrom } from "../domain/account-state.js";
 import {
   type MailMessage,
   type MailSender,
@@ -122,7 +124,7 @@ export class IdentityService {
   readonly publicOrigin: string;
 
   constructor(
-    db: Database,
+    private readonly db: Database,
     @Inject(runtimeConfig.KEY) config: ConfigType<typeof runtimeConfig>,
     @Inject(ResendMailSender) private readonly mail: MailSender,
   ) {
@@ -148,5 +150,27 @@ export class IdentityService {
 
   async revokeFromHeaders(headers: IncomingHttpHeaders) {
     await this.auth.api.signOut({ headers: fromNodeHeaders(headers) });
+  }
+
+  private async accountRow(email: string) {
+    const normalized = email.trim().toLowerCase();
+    if (!normalized) return undefined;
+    return (
+      await this.db.client
+        .select({ emailVerified: user.emailVerified })
+        .from(user)
+        .where(eq(user.email, normalized))
+        .limit(1)
+    )[0];
+  }
+
+  /** True only when this address already belongs to a confirmed account. */
+  async verifiedAccountExists(email: string) {
+    return (await this.accountRow(email))?.emailVerified === true;
+  }
+
+  /** new, verified, or unverified. No name or other account fields. */
+  async accountState(email: string) {
+    return accountStateFrom(await this.accountRow(email));
   }
 }

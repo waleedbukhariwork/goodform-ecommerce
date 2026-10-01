@@ -7,6 +7,7 @@ type Name =
   | "orders"
   | "user"
   | "search"
+  | "hanger"
   | "check"
   | "close";
 
@@ -64,6 +65,13 @@ export function Icon({
         <>
           <circle cx="10.5" cy="10.5" r="6" />
           <path d="m15 15 5 5" />
+        </>
+      )}
+      {name === "hanger" && (
+        <>
+          <path d="M12 6.5a1.5 1.5 0 1 0-1.2-2.4" />
+          <path d="M12 6.5 5 11h14L12 6.5Z" />
+          <path d="M7 11.5 12 20l5-8.5" />
         </>
       )}
       {name === "check" && <path d="m5 12 4 4L19 6" />}

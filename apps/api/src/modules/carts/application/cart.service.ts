@@ -1,10 +1,6 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from "@nestjs/common";
+import { HttpStatus, Injectable } from "@nestjs/common";
 import type { CommerceTransaction } from "../../../db/transaction-runner.js";
+import { publicException } from "../../../public-code.js";
 import type { CheckoutCart } from "../carts.types.js";
 import { CatalogService } from "../../catalog/index.js";
 import {
@@ -44,7 +40,7 @@ export class CartService {
   async put(ownerId: string, slug: string, size: string, quantity: number) {
     const product = await this.catalog.snapshotBySlug(slug);
     if (!product.sizes.includes(size))
-      throw new BadRequestException("Unknown size");
+      throw publicException(HttpStatus.BAD_REQUEST, "UNKNOWN_SIZE");
     const existing = await this.repository.findVariant(
       ownerId,
       product.id,
@@ -54,14 +50,14 @@ export class CartService {
       !existing &&
       (await this.repository.list(ownerId)).length >= MAX_CART_LINES
     )
-      throw new ConflictException("Cart item limit reached");
+      throw publicException(HttpStatus.CONFLICT, "CART_ITEM_LIMIT");
     await this.repository.put(ownerId, product.id, size, quantity);
     return this.view(ownerId);
   }
 
   async remove(ownerId: string, id: string) {
     if (!(await this.repository.remove(ownerId, id)).length)
-      throw new NotFoundException("Cart item not found");
+      throw publicException(HttpStatus.NOT_FOUND, "CART_ITEM_NOT_FOUND");
     return this.view(ownerId);
   }
 
@@ -70,7 +66,8 @@ export class CartService {
     ownerId: string,
   ): Promise<CheckoutCart> {
     const stored = await this.repository.list(ownerId, transaction);
-    if (!stored.length) throw new BadRequestException("Cart is empty");
+    if (!stored.length)
+      throw publicException(HttpStatus.BAD_REQUEST, "CART_EMPTY");
     const lines = await Promise.all(
       stored.map(async (item) => {
         const product = await this.catalog.snapshotById(
@@ -78,7 +75,7 @@ export class CartService {
           transaction,
         );
         if (!product.sizes.includes(item.size))
-          throw new ConflictException("Variant unavailable");
+          throw publicException(HttpStatus.CONFLICT, "VARIANT_UNAVAILABLE");
         return {
           productId: product.id,
           slug: product.slug,
@@ -111,7 +108,8 @@ export class CartService {
 
   async linesForReservation(ownerId: string) {
     const cart = await this.view(ownerId);
-    if (!cart.items.length) throw new BadRequestException("Cart is empty");
+    if (!cart.items.length)
+      throw publicException(HttpStatus.BAD_REQUEST, "CART_EMPTY");
     return Promise.all(
       cart.items.map(async (item) => {
         const product = await this.catalog.snapshotBySlug(item.slug);

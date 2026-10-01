@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { apiFetch, ApiError } from "../../lib/transport";
 import { formatMoney } from "../../lib/money";
 import { ProductMedia } from "../../components/ui/product-media";
+import { publishCartQuantity } from "./cart-count";
 import { Failure } from "./error";
 import type { Cart } from "./api";
 
@@ -27,6 +28,7 @@ export function CartActions({ cart }: { cart: Cart }) {
     if (!pendingLine && !checkingOut) {
       setConfirmed(cart);
       setShown(cart);
+      publishCartQuantity(cart.items);
     }
   }, [cart]);
   useEffect(() => {
@@ -75,6 +77,7 @@ export function CartActions({ cart }: { cart: Cart }) {
         throw new ApiError(0, "Cart unavailable", crypto.randomUUID());
       setConfirmed(fresh);
       setShown(fresh);
+      publishCartQuantity(fresh.items);
       router.refresh();
     } catch (cause) {
       setShown(confirmed);
@@ -135,7 +138,8 @@ export function CartActions({ cart }: { cart: Cart }) {
                     <Link href={`/products/${item.slug}`}>{item.name}</Link>
                   </h2>
                   <p>
-                    Size {item.size} · {formatMoney(item.unitPriceCents)} each
+                    Size {item.size} · Quantity {item.quantity} ·{" "}
+                    {formatMoney(item.unitPriceCents)} each
                   </p>
                   <div className="cart-actions-row">
                     <div
@@ -154,7 +158,9 @@ export function CartActions({ cart }: { cart: Cart }) {
                       >
                         −
                       </button>
-                      <output aria-live="polite">{item.quantity}</output>
+                      <span className="quantity-value" aria-live="polite">
+                        {item.quantity}
+                      </span>
                       <button
                         className="step-button"
                         type="button"

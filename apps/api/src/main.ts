@@ -91,6 +91,44 @@ export async function bootstrap() {
       }
     },
   );
+  expressApp.post(
+    "/api/auth/sign-up/email",
+    json({ limit: "16kb" }),
+    async (
+      request: Request & { requestId?: string },
+      response: Response,
+      next: () => void,
+    ) => {
+      try {
+        const email =
+          request.body &&
+          typeof request.body === "object" &&
+          "email" in request.body &&
+          typeof request.body.email === "string"
+            ? request.body.email
+            : "";
+        if (await identity.verifiedAccountExists(email)) {
+          response.status(422).type("application/json").json({
+            message: "User already exists.",
+            code: "USER_ALREADY_EXISTS",
+            requestId: request.requestId,
+          });
+          return;
+        }
+        next();
+      } catch {
+        response.status(503).type("application/problem+json").json({
+          type: "about:blank",
+          title: "Service Unavailable",
+          status: 503,
+          detail: "Service Unavailable",
+          instance: request.path,
+          code: "UNAVAILABLE",
+          requestId: request.requestId,
+        });
+      }
+    },
+  );
   expressApp.all("/api/auth/*splat", toNodeHandler(identity.auth));
   const payments = app.get(PaymentsService);
   expressApp.post(

@@ -4,7 +4,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import assert from "node:assert/strict";
+import { HttpException, HttpStatus } from "@nestjs/common";
 import { apiConfig } from "../src/config.js";
+import { codeForException, publicException } from "../src/public-code.js";
+import {
+  accountStateFrom,
+  allowLookup,
+} from "../src/modules/identity/domain/account-state.js";
 import { plainToInstance } from "class-transformer";
 import { validateSync } from "class-validator";
 import { ListProductsQuery } from "../src/modules/catalog/presentation/catalog.dto.js";
@@ -90,5 +96,44 @@ test("Observe remains opt-in and rejects incomplete enabled credentials", () => 
   assert.throws(
     () => apiConfig({ ...base, OBSERVE_ENABLED: "sometimes" }),
     /Invalid API runtime configuration/,
+  );
+});
+
+test("account lookup reports only new, verified, or unverified", () => {
+  assert.equal(accountStateFrom(undefined), "new");
+  assert.equal(accountStateFrom({ emailVerified: false }), "unverified");
+  assert.equal(accountStateFrom({ emailVerified: true }), "verified");
+  const buckets = new Map<string, { count: number; reset: number }>();
+  for (let attempt = 0; attempt < 30; attempt += 1) {
+    assert.equal(allowLookup(buckets, "203.0.113.5", 1_000), true);
+  }
+  assert.equal(allowLookup(buckets, "203.0.113.5", 1_000), false);
+  assert.equal(allowLookup(buckets, "203.0.113.9", 1_000), true);
+});
+
+test("shopper errors expose only a public code", () => {
+  assert.equal(
+    codeForException(
+      publicException(HttpStatus.CONFLICT, "INSUFFICIENT_STOCK"),
+      409,
+    ),
+    "INSUFFICIENT_STOCK",
+  );
+  assert.equal(
+    codeForException(
+      new HttpException(
+        { message: "postgres://user:secret@db/goodform", code: "DATABASE_URL" },
+        500,
+      ),
+      500,
+    ),
+    "INTERNAL_ERROR",
+  );
+  assert.equal(
+    codeForException(
+      new HttpException("Stripe secret sk_test_hidden", 503),
+      503,
+    ),
+    "UNAVAILABLE",
   );
 });

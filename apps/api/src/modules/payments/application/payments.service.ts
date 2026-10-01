@@ -1,7 +1,7 @@
 import {
   BadRequestException,
-  ConflictException,
   HttpException,
+  HttpStatus,
   Inject,
   Injectable,
   NotFoundException,
@@ -10,6 +10,7 @@ import {
 import type { ConfigType } from "@nestjs/config";
 import Stripe from "stripe";
 import { runtimeConfig } from "../../../config.js";
+import { publicException } from "../../../public-code.js";
 import {
   TransactionRunner,
   type CommerceTransaction,
@@ -44,8 +45,9 @@ export class PaymentsService {
 
   async checkout(ownerId: string, reservationId: string, key: string) {
     if (!this.stripe)
-      throw new ServiceUnavailableException(
-        "Stripe test checkout is not configured",
+      throw publicException(
+        HttpStatus.SERVICE_UNAVAILABLE,
+        "PAYMENTS_UNAVAILABLE",
       );
     if (!(await this.repository.consumeCheckoutLimit(ownerId)))
       throw new HttpException("Checkout rate limit reached", 429);
@@ -72,9 +74,7 @@ export class PaymentsService {
     });
     if (!prepared.created) {
       if (prepared.attempt.reservationId !== reservationId)
-        throw new ConflictException(
-          "Idempotency key belongs to a different checkout",
-        );
+        throw publicException(HttpStatus.CONFLICT, "CHECKOUT_NOT_STARTED");
       if (
         prepared.attempt.status === "ready" &&
         prepared.attempt.orderId &&
@@ -85,7 +85,7 @@ export class PaymentsService {
           url: prepared.attempt.checkoutUrl,
           status: "payment_pending",
         };
-      throw new ConflictException("Checkout is pending reconciliation");
+      throw publicException(HttpStatus.CONFLICT, "CHECKOUT_IN_PROGRESS");
     }
     const { attempt, order } = prepared;
     let session: Stripe.Checkout.Session;
@@ -111,8 +111,9 @@ export class PaymentsService {
       );
     } catch {
       await this.repository.markUncertain(attempt.id);
-      throw new ServiceUnavailableException(
-        "Checkout initiation needs reconciliation",
+      throw publicException(
+        HttpStatus.SERVICE_UNAVAILABLE,
+        "PAYMENTS_UNAVAILABLE",
       );
     }
     if (
@@ -122,7 +123,10 @@ export class PaymentsService {
       new URL(session.url).origin !== "https://checkout.stripe.com"
     ) {
       await this.repository.markUncertain(attempt.id);
-      throw new ServiceUnavailableException("Unexpected checkout session");
+      throw publicException(
+        HttpStatus.SERVICE_UNAVAILABLE,
+        "PAYMENTS_UNAVAILABLE",
+      );
     }
     await this.repository.markReady(attempt.id, session.id, session.url);
     return { orderId: order.id, url: session.url, status: "payment_pending" };
@@ -192,22 +196,24 @@ export class PaymentsService {
 
   async reconcile(ownerId: string, orderId: string) {
     if (!this.stripe)
-      throw new ServiceUnavailableException(
-        "Provider reconciliation is unavailable",
+      throw publicException(
+        HttpStatus.SERVICE_UNAVAILABLE,
+        "PAYMENTS_UNAVAILABLE",
       );
     const attempt = await this.repository.byOwnerOrder(ownerId, orderId);
     if (!attempt) throw new NotFoundException("Order not found");
     if (!attempt.stripeSessionId)
-      throw new ConflictException(
-        "Checkout session needs operator reconciliation",
-      );
+      throw publicException(HttpStatus.CONFLICT, "CHECKOUT_IN_PROGRESS");
     let session: Stripe.Checkout.Session;
     try {
       session = await this.stripe.checkout.sessions.retrieve(
         attempt.stripeSessionId,
       );
     } catch {
-      throw new ServiceUnavailableException("Provider state is unavailable");
+      throw publicException(
+        HttpStatus.SERVICE_UNAVAILABLE,
+        "PAYMENTS_UNAVAILABLE",
+      );
     }
     await this.runner.run((transaction) =>
       this.applyProviderSession(transaction, session),

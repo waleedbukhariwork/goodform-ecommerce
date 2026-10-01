@@ -135,6 +135,9 @@ export default async function CatalogPage({
                   priority={index === 0}
                 />
                 <div className="product-card-copy">
+                  <span className="piece-index" aria-hidden="true">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
                   <span className="eyebrow">
                     {product.category} / {product.color}
                   </span>

@@ -1,8 +1,5 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from "@nestjs/common";
+import { HttpStatus, Injectable, NotFoundException } from "@nestjs/common";
+import { publicException } from "../../../public-code.js";
 import type { CommerceTransaction } from "../../../db/transaction-runner.js";
 import type { CheckoutLine } from "../../carts/index.js";
 import { CartService } from "../../carts/index.js";
@@ -27,7 +24,7 @@ export class InventoryService {
       return this.detail(ownerId, reservation.id);
     } catch (error) {
       if (error instanceof InsufficientStockError)
-        throw new ConflictException("Insufficient stock");
+        throw publicException(HttpStatus.CONFLICT, "INSUFFICIENT_STOCK");
       throw error;
     }
   }
@@ -51,12 +48,12 @@ export class InventoryService {
       );
     } catch (error) {
       if (error instanceof ReservationNotFoundError)
-        throw new NotFoundException("Reservation not found");
+        throw publicException(HttpStatus.NOT_FOUND, "RESERVATION_NOT_FOUND");
       if (
         error instanceof ReservationConflictError ||
         error instanceof InsufficientStockError
       )
-        throw new ConflictException("Reservation unavailable");
+        throw publicException(HttpStatus.CONFLICT, "RESERVATION_UNAVAILABLE");
       throw error;
     }
   }

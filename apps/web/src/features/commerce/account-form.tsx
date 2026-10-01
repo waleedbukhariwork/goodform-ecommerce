@@ -13,6 +13,23 @@ const VERIFIED_PATH = "/email-verified";
 /** Mail delivery is bounded at 8s on the server; keep the browser request open past that. */
 const MAIL_REQUEST_TIMEOUT_MS = 12_000;
 
+type Step = "email" | "password" | "create" | "verify" | "reset";
+type AccountState = "new" | "verified" | "unverified";
+type Intent = "signin" | "signup";
+
+async function postVerification(email: string) {
+  await apiFetch("/api/auth/send-verification-email", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    timeoutMs: MAIL_REQUEST_TIMEOUT_MS,
+    body: JSON.stringify({ email, callbackURL: VERIFIED_PATH }),
+  });
+}
+
+function verificationLimited(cause: unknown) {
+  return cause instanceof ApiError && cause.status === 429;
+}
+
 async function fetchCooldown(email: string): Promise<number> {
   try {
     const result = await apiFetch<{ retryAfterSeconds: number }>(
@@ -30,14 +47,17 @@ async function fetchCooldown(email: string): Promise<number> {
 export function AccountForm() {
   const router = useRouter();
   const { refresh, beginRouteHome, cancelRouteHome } = useSession();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [step, setStep] = useState<Step>("email");
+  const [intent, setIntent] = useState<Intent>("signin");
+  const [guide, setGuide] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
+  const [linkSent, setLinkSent] = useState(false);
+  const [mismatch, setMismatch] = useState(false);
   const [busy, setBusy] = useState(false);
   const [slow, setSlow] = useState(false);
   const [error, setError] = useState<unknown>(null);
-  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
   const [resendCount, setResendCount] = useState(0);
-  const [forgot, setForgot] = useState(false);
   const [resetNotice, setResetNotice] = useState(false);
   const validation = useFormValidation("account");
   useEffect(() => {
@@ -45,7 +65,6 @@ export function AccountForm() {
     const timer = window.setTimeout(() => setSlow(true), 3000);
     return () => window.clearTimeout(timer);
   }, [busy]);
-  // One ticking interval, torn down on unmount and whenever the wait ends.
   useEffect(() => {
     if (cooldown <= 0) return;
     const timer = window.setInterval(
@@ -55,13 +74,105 @@ export function AccountForm() {
     return () => window.clearInterval(timer);
   }, [cooldown > 0]);
 
+  function changeEmail() {
+    setStep("email");
+    setGuide(null);
+    setError(null);
+    setMismatch(false);
+    setLinkSent(false);
+    setResetNotice(false);
+    validation.clear();
+  }
+
+  function choose(next: Intent) {
+    setIntent(next);
+    setGuide(null);
+    setError(null);
+    setMismatch(false);
+    setResetNotice(false);
+    validation.clear();
+    if (step !== "email") setStep("email");
+  }
+
+  async function openVerify(sent: boolean) {
+    setLinkSent(sent);
+    setStep("verify");
+    setCooldown(await fetchCooldown(email));
+  }
+
+  async function continueWithEmail(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (busy || !validation.validate(event.currentTarget)) return;
+    setBusy(true);
+    setSlow(false);
+    setError(null);
+    setGuide(null);
+    const nextEmail = String(
+      new FormData(event.currentTarget).get("email") ?? "",
+    )
+      .trim()
+      .toLowerCase();
+    setEmail(nextEmail);
+    try {
+      const result = await apiFetch<{ status: AccountState }>(
+        `/api/v1/auth/account-state?email=${encodeURIComponent(nextEmail)}`,
+        { cache: "no-store" },
+      );
+      if (result?.status === "verified") {
+        setIntent("signin");
+        setStep("password");
+        if (intent === "signup") {
+          setGuide(
+            "An account already exists for that email. Enter your password to sign in.",
+          );
+        }
+      } else if (result?.status === "unverified") {
+        const waiting = await fetchCooldown(nextEmail);
+        if (waiting > 0) {
+          setLinkSent(true);
+          setCooldown(waiting);
+        } else {
+          try {
+            await postVerification(nextEmail);
+            setLinkSent(true);
+            setCooldown(MAIL_COOLDOWN_SECONDS);
+          } catch (cause) {
+            const retry = await fetchCooldown(nextEmail);
+            if (retry > 0 || verificationLimited(cause)) {
+              setLinkSent(true);
+              setCooldown(retry > 0 ? retry : MAIL_COOLDOWN_SECONDS);
+            } else {
+              setLinkSent(false);
+              setError(cause);
+              setCooldown(retry);
+            }
+          }
+        }
+        setStep("verify");
+      } else {
+        setIntent("signup");
+        setStep("create");
+        if (intent === "signin") {
+          setGuide("No account yet for this email. Create one to continue.");
+        }
+      }
+    } catch (cause) {
+      setError(cause);
+    } finally {
+      setBusy(false);
+      setSlow(false);
+    }
+  }
+
   async function requestReset(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy || !validation.validate(event.currentTarget)) return;
     setBusy(true);
     setError(null);
     setResetNotice(false);
-    const email = String(new FormData(event.currentTarget).get("email") ?? "");
+    const address = String(
+      new FormData(event.currentTarget).get("email") ?? "",
+    );
     try {
       // The response is identical whether or not the address exists, so it
       // cannot be used to discover which emails are registered.
@@ -69,7 +180,7 @@ export function AccountForm() {
         method: "POST",
         headers: { "content-type": "application/json" },
         timeoutMs: MAIL_REQUEST_TIMEOUT_MS,
-        body: JSON.stringify({ email, redirectTo: "/reset-password" }),
+        body: JSON.stringify({ email: address, redirectTo: "/reset-password" }),
       });
       setResetNotice(true);
     } catch (cause) {
@@ -82,15 +193,22 @@ export function AccountForm() {
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy || !validation.validate(event.currentTarget)) return;
+    const form = new FormData(event.currentTarget);
+    const password = String(form.get("password") ?? "");
+    if (step === "create") {
+      const confirmation = String(form.get("confirmation") ?? "");
+      if (password !== confirmation) {
+        setMismatch(true);
+        return;
+      }
+    }
+    setMismatch(false);
     setBusy(true);
     setSlow(false);
     setError(null);
     let openingHome = false;
-    const form = new FormData(event.currentTarget);
-    const email = String(form.get("email") ?? "");
-    const password = String(form.get("password") ?? "");
     const body =
-      mode === "signup"
+      step === "create"
         ? {
             name: String(form.get("name") ?? ""),
             email,
@@ -100,7 +218,7 @@ export function AccountForm() {
         : { email, password, callbackURL: VERIFIED_PATH };
     try {
       const response = await apiFetch<{ token: string | null }>(
-        "/api/auth/" + (mode === "signup" ? "sign-up/email" : "sign-in/email"),
+        "/api/auth/" + (step === "create" ? "sign-up/email" : "sign-in/email"),
         {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -108,11 +226,8 @@ export function AccountForm() {
           body: JSON.stringify(body),
         },
       );
-      // The session cookie is HttpOnly. Better Auth returns a null token when
-      // signup needs email verification, and a token when it signs in.
-      if (mode === "signup" && response?.token === null) {
-        setPendingEmail(email);
-        setCooldown(await fetchCooldown(email));
+      if (step === "create" && response?.token === null) {
+        await openVerify(true);
         return;
       }
       beginRouteHome("home-in");
@@ -127,12 +242,20 @@ export function AccountForm() {
       router.replace("/");
     } catch (cause) {
       if (
-        mode === "signin" &&
+        step === "password" &&
         cause instanceof ApiError &&
         cause.code === "EMAIL_NOT_VERIFIED"
       ) {
-        setPendingEmail(email);
-        setCooldown(await fetchCooldown(email));
+        await openVerify(true);
+        return;
+      }
+      if (
+        step === "create" &&
+        cause instanceof ApiError &&
+        (cause.status === 422 || cause.code === "USER_ALREADY_EXISTS")
+      ) {
+        setStep("password");
+        setError(cause);
         return;
       }
       if (openingHome) cancelRouteHome();
@@ -146,17 +269,22 @@ export function AccountForm() {
     }
   }
 
-  if (pendingEmail) {
+  if (step === "verify") {
     return (
       <section className="account-panel" aria-label="Verify your email">
+        <Purpose intent={intent} busy={busy} onChoose={choose} />
         <h2>Check your email</h2>
+        <KnownEmail email={email} onChange={changeEmail} />
         <p role="status">
-          We sent a verification link to {pendingEmail}. Open it to confirm your
-          email.
+          {linkSent
+            ? `We sent a verification link to ${email}. Open it to confirm your email.`
+            : "This email is not confirmed yet. Request a verification link, then open it."}
         </p>
-        <p className="muted">
-          Nothing arrived? Check your spam folder, or request another link.
-        </p>
+        {linkSent && (
+          <p className="muted">
+            Nothing arrived? Check your spam folder, or resend the link.
+          </p>
+        )}
         <div className="account-actions" role="group" aria-label="Next action">
           <button
             type="button"
@@ -167,25 +295,13 @@ export function AccountForm() {
               setBusy(true);
               setError(null);
               try {
-                await apiFetch("/api/auth/send-verification-email", {
-                  method: "POST",
-                  headers: { "content-type": "application/json" },
-                  timeoutMs: MAIL_REQUEST_TIMEOUT_MS,
-                  body: JSON.stringify({
-                    email: pendingEmail,
-                    callbackURL: VERIFIED_PATH,
-                  }),
-                });
-                // The server owns the cooldown; re-read it rather than
-                // guessing, so a rate-limited send cannot be retried early.
+                await postVerification(email);
+                setLinkSent(true);
                 setCooldown(MAIL_COOLDOWN_SECONDS);
                 setResendCount((count) => count + 1);
               } catch (cause) {
-                const wait = await fetchCooldown(pendingEmail);
-                if (
-                  wait > 0 ||
-                  (cause instanceof ApiError && cause.status === 429)
-                ) {
+                const wait = await fetchCooldown(email);
+                if (wait > 0 || verificationLimited(cause)) {
                   setCooldown(wait > 0 ? wait : MAIL_COOLDOWN_SECONDS);
                   setError(null);
                 } else {
@@ -199,20 +315,13 @@ export function AccountForm() {
           >
             {busy
               ? "Sending…"
-              : cooldown > 0
-                ? `Resend link in ${cooldown}s`
-                : "Resend link"}
-          </button>
-          <button
-            type="button"
-            className="secondary"
-            onClick={() => {
-              setPendingEmail(null);
-              setError(null);
-              setCooldown(0);
-            }}
-          >
-            Use a different email
+              : linkSent
+                ? cooldown > 0
+                  ? `Resend link in ${cooldown}s`
+                  : "Resend link"
+                : cooldown > 0
+                  ? `Send link in ${cooldown}s`
+                  : "Send link"}
           </button>
         </div>
         {cooldown > 0 && (
@@ -227,9 +336,10 @@ export function AccountForm() {
     );
   }
 
-  if (forgot) {
+  if (step === "reset") {
     return (
       <section className="account-panel" aria-label="Reset your password">
+        <Purpose intent={intent} busy={busy} onChoose={choose} />
         <h2>Reset your password</h2>
         {resetNotice ? (
           <p role="status">
@@ -245,6 +355,7 @@ export function AccountForm() {
                 type="email"
                 autoComplete="email"
                 required
+                defaultValue={email}
                 {...validation.fieldProps("email")}
               />
               {validation.fieldError("email")}
@@ -258,7 +369,7 @@ export function AccountForm() {
           type="button"
           className="secondary"
           onClick={() => {
-            setForgot(false);
+            setStep("password");
             setResetNotice(false);
             setError(null);
             validation.clear();
@@ -273,90 +384,114 @@ export function AccountForm() {
 
   return (
     <section className="account-panel" aria-label="Account access">
-      <div className="account-switch" role="group" aria-label="Account action">
-        <button
-          type="button"
-          className="account-tab"
-          aria-pressed={mode === "signin"}
-          onClick={() => {
-            setMode("signin");
-            setError(null);
-            validation.clear();
-          }}
-        >
-          Sign in
-        </button>
-        <button
-          type="button"
-          className="account-tab"
-          aria-pressed={mode === "signup"}
-          onClick={() => {
-            setMode("signup");
-            setError(null);
-            validation.clear();
-          }}
-        >
-          Create account
-        </button>
-      </div>
-      <form onSubmit={submit} aria-busy={busy} noValidate>
-        {mode === "signup" && (
+      <Purpose intent={intent} busy={busy} onChoose={choose} />
+      <h2>
+        {step === "email"
+          ? "Sign in or create an account"
+          : step === "create"
+            ? "Create account"
+            : "Sign in"}
+      </h2>
+      {step === "email" && (
+        <p className="muted">
+          Enter your email. Sign in and a new account both start here.
+        </p>
+      )}
+      {guide && <p role="status">{guide}</p>}
+      {step === "email" ? (
+        <form onSubmit={continueWithEmail} aria-busy={busy} noValidate>
           <label className="form-field">
-            Name
+            Email
             <input
-              name="name"
-              autoComplete="name"
+              name="email"
+              type="email"
+              autoComplete="username"
               required
-              minLength={2}
-              {...validation.fieldProps("name")}
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              {...validation.fieldProps("email")}
             />
-            {validation.fieldError("name")}
+            {validation.fieldError("email")}
           </label>
-        )}
-        <label className="form-field">
-          Email
-          <input
-            name="email"
-            type="email"
-            autoComplete="email"
-            required
-            {...validation.fieldProps("email")}
-          />
-          {validation.fieldError("email")}
-        </label>
-        <label className="form-field">
-          Password
-          <input
-            name="password"
-            type="password"
-            autoComplete={
-              mode === "signup" ? "new-password" : "current-password"
-            }
-            required
-            minLength={8}
-            {...validation.fieldProps("password")}
-          />
-          {validation.fieldError("password")}
-        </label>
-        <button type="submit" disabled={busy}>
-          {busy
-            ? "Please wait…"
-            : mode === "signup"
-              ? "Create account"
-              : "Sign in"}
+          <button type="submit" disabled={busy}>
+            {busy ? "Please wait…" : "Continue"}
+          </button>
+        </form>
+      ) : (
+        <form onSubmit={submit} aria-busy={busy} noValidate>
+          <KnownEmail email={email} onChange={changeEmail} />
+          {step === "create" && (
+            <label className="form-field">
+              Name
+              <input
+                name="name"
+                autoComplete="name"
+                required
+                minLength={2}
+                {...validation.fieldProps("name")}
+              />
+              {validation.fieldError("name")}
+            </label>
+          )}
+          <label className="form-field">
+            Password
+            <input
+              name="password"
+              type="password"
+              autoComplete={
+                step === "create" ? "new-password" : "current-password"
+              }
+              required
+              minLength={8}
+              {...validation.fieldProps("password")}
+            />
+            {validation.fieldError("password")}
+          </label>
+          {step === "create" && (
+            <label className="form-field">
+              Re-enter password
+              <input
+                name="confirmation"
+                type="password"
+                autoComplete="new-password"
+                required
+                minLength={8}
+                {...validation.fieldProps("confirmation")}
+                onInput={(event) => {
+                  setMismatch(false);
+                  validation.fieldProps("confirmation").onInput(event);
+                }}
+              />
+              {validation.fieldError("confirmation")}
+              {mismatch && (
+                <span className="field-error" role="alert">
+                  Those passwords do not match.
+                </span>
+              )}
+            </label>
+          )}
+          <button type="submit" disabled={busy}>
+            {busy
+              ? "Please wait…"
+              : step === "create"
+                ? "Create account"
+                : "Sign in"}
+          </button>
+        </form>
+      )}
+      {step === "password" && (
+        <button
+          type="button"
+          className="link-button"
+          onClick={() => {
+            setStep("reset");
+            setError(null);
+            validation.clear();
+          }}
+        >
+          Forgot your password?
         </button>
-      </form>
-      <button
-        type="button"
-        className="link-button"
-        onClick={() => {
-          setForgot(true);
-          setError(null);
-          validation.clear();
-        }}
-      >
-        Forgot your password?
-      </button>
+      )}
       {busy && (
         <p role="status">
           {slow
@@ -367,9 +502,64 @@ export function AccountForm() {
       {error !== null && (
         <Failure
           error={error}
-          context={mode === "signup" ? "signup" : "auth"}
+          context={
+            error instanceof ApiError &&
+            (error.status === 422 || error.code === "USER_ALREADY_EXISTS")
+              ? "signup"
+              : "auth"
+          }
         />
       )}
     </section>
+  );
+}
+
+function Purpose({
+  intent,
+  busy,
+  onChoose,
+}: {
+  intent: Intent;
+  busy: boolean;
+  onChoose: (next: Intent) => void;
+}) {
+  return (
+    <div className="account-switch" role="group" aria-label="Account action">
+      <button
+        type="button"
+        className="account-tab"
+        aria-pressed={intent === "signin"}
+        disabled={busy}
+        onClick={() => onChoose("signin")}
+      >
+        Sign in
+      </button>
+      <button
+        type="button"
+        className="account-tab"
+        aria-pressed={intent === "signup"}
+        disabled={busy}
+        onClick={() => onChoose("signup")}
+      >
+        Create account
+      </button>
+    </div>
+  );
+}
+
+function KnownEmail({
+  email,
+  onChange,
+}: {
+  email: string;
+  onChange: () => void;
+}) {
+  return (
+    <div className="account-known-email">
+      <p>{email}</p>
+      <button type="button" className="link-button" onClick={onChange}>
+        Change
+      </button>
+    </div>
   );
 }

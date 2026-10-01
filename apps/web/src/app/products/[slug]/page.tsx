@@ -41,7 +41,7 @@ export default async function ProductPage({
         <Icon name="arrow-left" /> Back to collection
       </Link>
       <div className="detail-grid">
-        <div className="detail-image">
+        <div className="detail-image detail-stage">
           <ProductMedia
             src={product.imagePath}
             alt={`Reference photograph for ${product.name}`}

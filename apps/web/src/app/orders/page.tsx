@@ -50,7 +50,7 @@ export default async function OrdersPage() {
                   <ul className="order-lines">
                     {order.lines.map((line, index) => (
                       <li key={`${line.name}-${line.size}-${index}`}>
-                        {line.name}, size {line.size} × {line.quantity}
+                        {line.name}, size {line.size}, quantity {line.quantity}
                       </li>
                     ))}
                   </ul>

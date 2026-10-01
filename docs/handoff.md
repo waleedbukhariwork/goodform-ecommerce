@@ -1,3 +1,30 @@
+## Guest cart — 2026-10-01
+
+- Status: **in progress**, local only. Not deployed. Staging still serves release `0395eee`. No harness `verify` or `task finish`.
+- A signed-out cart shows a paper bag and an invitation to sign in or create an account. The page no longer uses the red error for that case. A store that cannot be reached still shows the connection message.
+
+## Account steps — 2026-10-01
+
+- Status: **in progress**, local only. Not deployed. Staging still serves release `0395eee`. No harness `verify` or `task finish`.
+- Sign in and Create account stay visible together. Both start with the same email step. A confirmed address continues to the password. A new address continues to create account, with the password entered twice. An unconfirmed address stays on the check-email step. Password reset still does not say whether the address is registered. The lookup is limited to 30 requests a minute per address source and returns only `new`, `verified`, or `unverified`.
+- Creating an account sends the first verification link, then the button reads Resend link. Continuing with an unconfirmed address sends that link immediately and opens the same screen with Resend link. A link already sent in the last minute is not sent again; the button waits out the remaining seconds. Send link remains only when that automatic send fails.
+
+## Object bench interface — 2026-10-01
+
+- Status: **in progress**, local only. Not deployed. Staging still serves release `0395eee`. No harness `verify` or `task finish`.
+- The paper, ink, and rust palette is unchanged. Navigation is a key tray on a wide screen and a fixed bottom dock on a narrow one. The header stays stuck to the top while the page scrolls, and the narrow dock stays stuck to the bottom. The browser tab uses the circular g mark. Garment cards and the product photograph use a contact shadow and a small tilt; the tilt is off under reduced motion, and the product photograph stays flat below 768px. Checkout, forms, and tables stay flat.
+
+## Quantity and shopper errors — 2026-10-01
+
+- Status: **in progress**, local only. Not deployed. Staging still serves release `0395eee`. No harness `verify` or `task finish`.
+- Cart lines, the product stepper, and the header cart mark now show the quantity. The header count is the signed-in shopper’s own cart total.
+- Checkout and cart failures that are safe to explain return a public code. The page states that reason in plain language. Provider text, secrets, and other exception messages stay off the page. A confirmed email that signs up again still sees the account-exists message.
+
+## Verified signup error — 2026-10-01
+
+- Status: **in progress**, local only. Not deployed. Staging still serves release `0395eee`. No harness `verify` or `task finish`.
+- A signup for an email that already belongs to a confirmed account now returns HTTP 422 `USER_ALREADY_EXISTS` before Better Auth. The form says the account already exists and points to sign in or password reset. An unconfirmed address still follows the check-email path and does not get this error.
+
 ## Sign-in and sign-out landing — 2026-09-30
 
 - Status: deployed on the existing staging host. `APP_ENV` remains staging. This was not a production promotion. SSM `7e640dd7-bee7-4557-a636-4207f445583d` passed dry-run, backup `/var/lib/goodform/staging/backups/20260930T182707Z-0395eee32d36047ccc4a2f5399c7d7a7dab20493.sql.gz`, migration, catalog seed, and the host HTTPS catalog smoke. No harness `verify` or `task finish`.

@@ -8,6 +8,7 @@ import {
 import type { Request, Response } from "express";
 import { apiConfig } from "./config.js";
 import { safeLog } from "./logging.js";
+import { codeForException } from "./public-code.js";
 
 @Catch()
 export class ProblemFilter implements ExceptionFilter {
@@ -33,18 +34,7 @@ export class ProblemFilter implements ExceptionFilter {
           503: "Service Unavailable",
         } as Record<number, string>
       )[status] ?? "Internal Server Error";
-    const code =
-      (
-        {
-          400: "INVALID_INPUT",
-          401: "UNAUTHORIZED",
-          403: "FORBIDDEN",
-          409: "CONFLICT",
-          429: "RATE_LIMITED",
-          404: "NOT_FOUND",
-          503: "UNAVAILABLE",
-        } as Record<number, string>
-      )[status] ?? "INTERNAL_ERROR";
+    const code = codeForException(error, status);
     if (status >= 500) {
       safeLog(this.config, "error", "http_error", {
         requestId: request.requestId,

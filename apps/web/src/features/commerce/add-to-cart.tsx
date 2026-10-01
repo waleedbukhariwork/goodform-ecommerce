@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { apiFetch, ApiError } from "../../lib/transport";
+import { publishCartQuantity } from "./cart-count";
 import { Failure } from "./error";
 import type { Cart } from "./api";
 
@@ -26,7 +27,10 @@ export function AddToCart({ slug, sizes }: { slug: string; sizes: string[] }) {
     let cancelled = false;
     apiFetch<Cart>("/api/v1/cart")
       .then((cart) => {
-        if (!cancelled && cart) setHeld(cart);
+        if (!cancelled && cart) {
+          setHeld(cart);
+          publishCartQuantity(cart.items);
+        }
       })
       .catch(() => {
         if (!cancelled) setHeld(null);
@@ -61,6 +65,7 @@ export function AddToCart({ slug, sizes }: { slug: string; sizes: string[] }) {
       const next = Math.min(MAX_QUANTITY, existing + adding);
       if (next === existing) {
         setHeld(current);
+        publishCartQuantity(current.items);
         setSavedQuantity(existing);
         return;
       }
@@ -71,6 +76,7 @@ export function AddToCart({ slug, sizes }: { slug: string; sizes: string[] }) {
       });
       if (!cart) throw new ApiError(0, "Cart unavailable", crypto.randomUUID());
       setHeld(cart);
+      publishCartQuantity(cart.items);
       setSavedQuantity(
         cart.items.find((item) => item.slug === slug && item.size === size)
           ?.quantity ?? next,
@@ -113,9 +119,13 @@ export function AddToCart({ slug, sizes }: { slug: string; sizes: string[] }) {
               : " Stock is checked when your cart is reserved."}
           </p>
           <div className="purchase-row">
-            <label className="form-field" htmlFor="product-quantity">
-              Quantity to add
-              <span className="quantity-stepper">
+            <div className="form-field">
+              <span id="product-quantity-label">Quantity to add</span>
+              <div
+                className="quantity-stepper"
+                role="group"
+                aria-labelledby="product-quantity-label"
+              >
                 <button
                   className="step-button"
                   type="button"
@@ -125,9 +135,9 @@ export function AddToCart({ slug, sizes }: { slug: string; sizes: string[] }) {
                 >
                   −
                 </button>
-                <output id="product-quantity" aria-live="polite">
+                <span className="quantity-value" aria-live="polite">
                   {quantity}
-                </output>
+                </span>
                 <button
                   className="step-button"
                   type="button"
@@ -137,8 +147,8 @@ export function AddToCart({ slug, sizes }: { slug: string; sizes: string[] }) {
                 >
                   +
                 </button>
-              </span>
-            </label>
+              </div>
+            </div>
             <button type="button" disabled={busy || room < 1} onClick={add}>
               {busy ? "Adding to cart…" : "Add to cart"}
             </button>

@@ -9,6 +9,8 @@ const publicReads = [
   /^\/api\/v1\/health\/(live|ready)$/,
   /^\/api\/v1\/products$/,
   /^\/api\/v1\/products\/[a-z0-9]+(?:-[a-z0-9]+)*$/,
+  /^\/api\/v1\/auth\/account-state$/,
+  /^\/api\/v1\/auth\/mail-cooldown$/,
 ];
 
 function deny(
