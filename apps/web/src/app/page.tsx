@@ -1,10 +1,8 @@
 import Link from "next/link";
 import { listProducts } from "../features/catalog/api";
-import { ProductMedia } from "../components/ui/product-media";
-import { Icon } from "../components/ui/icon";
-import { formatMoney } from "../lib/money";
+import { CatalogCollection } from "../features/catalog/catalog-collection";
+import { visibleProducts } from "../features/catalog/view";
 import { Failure } from "../features/commerce/error";
-import { CatalogSearch } from "../features/catalog/catalog-search";
 
 type Search = { q?: string; category?: string; sort?: string };
 
@@ -29,21 +27,7 @@ export default async function CatalogPage({
       </main>
     );
   }
-  const categories = [
-    ...new Set(result.items.map((item) => item.category)),
-  ].sort();
-  const items = result.items.filter(
-    (item) => category === "all" || item.category === category,
-  );
-  if (sort === "price-low")
-    items.sort(
-      (a, b) => a.priceCents - b.priceCents || a.name.localeCompare(b.name),
-    );
-  if (sort === "price-high")
-    items.sort(
-      (a, b) => b.priceCents - a.priceCents || a.name.localeCompare(b.name),
-    );
-  const first = items[0];
+  const first = visibleProducts(result.items, category, sort)[0];
   const preload = first?.imagePath.endsWith("-v2-1200.jpg")
     ? first.imagePath.replace("-1200.jpg", "-480.webp")
     : undefined;
@@ -78,86 +62,13 @@ export default async function CatalogPage({
           </p>
         </aside>
       </section>
-      <section aria-labelledby="garments-heading">
-        <div className="catalog-toolbar">
-          <h2 id="garments-heading">
-            The collection{" "}
-            <span>
-              {items.length} of {result.total} garments
-            </span>
-          </h2>
-          <CatalogSearch initialQuery={q} />
-        </div>
-        {result.items.length > 0 && (
-          <form
-            action="/"
-            method="get"
-            className="catalog-filters"
-            aria-label="Collection filters"
-          >
-            <input type="hidden" name="q" value={q} />
-            <label className="form-field">
-              Category
-              <select name="category" defaultValue={category}>
-                <option value="all">All garments</option>
-                {categories.map((value) => (
-                  <option key={value} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="form-field">
-              Sort by
-              <select name="sort" defaultValue={sort}>
-                <option value="featured">Featured</option>
-                <option value="price-low">Price: low to high</option>
-                <option value="price-high">Price: high to low</option>
-              </select>
-            </label>
-            <button type="submit" className="secondary">
-              Apply
-            </button>
-          </form>
-        )}
-        {items.length ? (
-          <div className="catalog-grid">
-            {items.map((product, index) => (
-              <Link
-                className="product-card"
-                key={product.slug}
-                href={`/products/${product.slug}`}
-              >
-                <ProductMedia
-                  src={product.imagePath}
-                  alt={`Reference photograph for ${product.name}`}
-                  sizes="(max-width: 360px) 288px, (max-width: 768px) 45vw, (max-width: 1024px) 30vw, 22vw"
-                  priority={index === 0}
-                />
-                <div className="product-card-copy">
-                  <span className="piece-index" aria-hidden="true">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                  <span className="eyebrow">
-                    {product.category} / {product.color}
-                  </span>
-                  <h3>{product.name}</h3>
-                  <p className="price">{formatMoney(product.priceCents)}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        ) : (
-          <div className="empty-panel">
-            <span className="eyebrow">No match in this edit</span>
-            <h3>Nothing fits that search.</h3>
-            <p>Try another name or view all eight garments.</p>
-            <Link className="button" href="/">
-              Clear search and filters <Icon name="arrow-right" />
-            </Link>
-          </div>
-        )}
-      </section>
+      <CatalogCollection
+        initialItems={result.items}
+        initialTotal={result.total}
+        initialQuery={q}
+        initialCategory={category}
+        initialSort={sort}
+      />
     </main>
   );
 }

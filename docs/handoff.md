@@ -4,6 +4,11 @@
 - Release label `ddbceaea331bf6494ee01735e69448b3d0256ec5`. API digest `sha256:8a0b8b0cc96a3e79a6f8992f040a6d3b44095420cff0934c8506e636db4fe0d2`. Web digest `sha256:a2a2b8ec0efba4d5e52f2e489cd263605e4eae953f89df74f90637bd4c52f18d`. The previous pair was API `sha256:e84fad3f433a002ed94d1c44a3bb371b40288e6a9b2c2473f86e2f364fbcf3bb` and web `sha256:dfd41da80ec7ce20c483f055fd2d6b7edc30ffd392ec45be8e5286d0d7c36276`.
 - Public checks after the release: home 200, account 200, catalog 200 with eight products, anonymous cart 401, and an invalid account-state lookup 400. The account script includes Check your email, Resend link, and Sign in or create an account. A delivered verification email was not sent from this session.
 
+## Collection search — 2026-10-01
+
+- Status: **in progress**, local only. Not deployed. Staging still serves release `ddbceae`. No harness `verify` or `task finish`.
+- Search and Apply no longer submit a full page request. The garment list updates in place, the address bar changes, and the header, introduction, and filters stay put. A failed search leaves the current garments on the page.
+
 ## Guest cart — 2026-10-01
 
 - Status: shipped on staging in release `ddbceae`. No harness `verify` or `task finish`.

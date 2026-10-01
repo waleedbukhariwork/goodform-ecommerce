@@ -516,6 +516,9 @@ input[aria-invalid="true"] {
   padding-block: var(--space-2) var(--space-10);
   perspective: 1400px;
 }
+.catalog-grid[aria-busy="true"] {
+  opacity: 0.72;
+}
 .product-card {
   position: relative;
   display: grid;
