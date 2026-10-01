@@ -1,3 +1,9 @@
+## Staging web release — 2026-10-01
+
+- Status: deployed on the existing staging host. `APP_ENV` remains staging. This was not a production promotion. SSM `4074d888-3af2-4e14-923f-2f8c112aab89` passed dry-run, backup `/var/lib/goodform/staging/backups/20261001T050201Z-8d28625d79eea3cd6d9b5891308c75c08c85a996.sql.gz`, migration, catalog seed, and the host HTTPS catalog smoke. No harness `verify` or `task finish`.
+- Release label `8d28625d79eea3cd6d9b5891308c75c08c85a996`. The API image is unchanged, digest `sha256:8a0b8b0cc96a3e79a6f8992f040a6d3b44095420cff0934c8506e636db4fe0d2`. Web digest `sha256:1db2cdd5971e123875ce7a3cb711ced348897bce12d9af1b741a7fdc7481de26`.
+- Public checks after the release: home 200 with title “Goodform, the demonstration collection”, cart 200 with title “Your cart, Goodform”, catalog 200. The account script has no tab switch. The collection script includes the in-place search. A delivered verification email was not sent from this session.
+
 ## Staging account and storefront release — 2026-10-01
 
 - Status: deployed on the existing staging host. `APP_ENV` remains staging. This was not a production promotion. SSM `74f273e4-f5ea-4013-9055-444c3146860e` passed dry-run, backup `/var/lib/goodform/staging/backups/20261001T044027Z-ddbceaea331bf6494ee01735e69448b3d0256ec5.sql.gz`, migration, catalog seed, and the host HTTPS catalog smoke. No harness `verify` or `task finish`.
@@ -6,7 +12,7 @@
 
 ## Collection search — 2026-10-01
 
-- Status: **in progress**, local only. Not deployed. Staging still serves release `ddbceae`. No harness `verify` or `task finish`.
+- Status: shipped on staging in release `8d28625`. No harness `verify` or `task finish`.
 - Search and Apply no longer submit a full page request. The garment list updates in place, the address bar changes, and the header, introduction, and filters stay put. A failed search leaves the current garments on the page.
 
 ## Guest cart — 2026-10-01
@@ -18,7 +24,7 @@
 
 - Status: shipped on staging in release `ddbceae`. No harness `verify` or `task finish`.
 - The account page has one email step. Sign in and Create account are not separate tabs, because both used the same email form. A confirmed address continues to the password. A new address continues to create account, with the password entered twice. An unconfirmed address stays on the check-email step. Password reset still does not say whether the address is registered. The lookup is limited to 30 requests a minute per address source and returns only `new`, `verified`, or `unverified`.
-- The duplicate tabs are removed locally and are still on staging release `ddbceae` until the next deploy. Browser tab titles no longer use an em dash: the collection tab reads “Goodform, the demonstration collection” and the cart tab reads “Your cart, Goodform”. That title change is local only.
+- The duplicate account tabs are gone on staging. The collection tab reads “Goodform, the demonstration collection” and the cart tab reads “Your cart, Goodform”.
 - Creating an account sends the first verification link, then the button reads Resend link. Continuing with an unconfirmed address sends that link immediately and opens the same screen with Resend link. A link already sent in the last minute is not sent again; the button waits out the remaining seconds. Send link remains only when that automatic send fails.
 
 ## Object bench interface — 2026-10-01
