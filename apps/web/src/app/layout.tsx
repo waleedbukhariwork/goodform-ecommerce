@@ -17,7 +17,7 @@ const serif = Newsreader({
 });
 
 export const metadata: Metadata = {
-  title: "Goodform — The demonstration collection",
+  title: "Goodform, the demonstration collection",
   description: "Eight demonstration garments with clear measurement guides.",
 };
 

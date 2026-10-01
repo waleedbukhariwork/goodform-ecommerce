@@ -8,7 +8,7 @@ import { ApiError } from "../../lib/transport";
 import { Icon } from "../../components/ui/icon";
 
 export const metadata: Metadata = {
-  title: "Your cart — Goodform",
+  title: "Your cart, Goodform",
   description:
     "Sign in to save each garment, size, and quantity in your Goodform cart, then review the selection before checkout.",
 };
