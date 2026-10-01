@@ -1034,28 +1034,6 @@ td {
 .confirm-panel > a.button {
   margin-top: var(--space-5);
 }
-.account-switch {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2px;
-  margin-bottom: var(--space-6);
-  padding: 4px;
-  background: var(--surface-strong);
-  box-shadow: var(--object-shadow);
-}
-.account-tab {
-  min-height: 48px;
-  padding: var(--space-2);
-  border: 0;
-  background: transparent;
-  color: var(--ink);
-  font-weight: 700;
-}
-.account-tab[aria-pressed="true"] {
-  background: var(--surface);
-  color: var(--ink);
-  box-shadow: var(--object-shadow);
-}
 .account-panel h2 {
   margin: 0 0 var(--space-5);
   font-family: var(--font-display);

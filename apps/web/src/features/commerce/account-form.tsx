@@ -15,7 +15,6 @@ const MAIL_REQUEST_TIMEOUT_MS = 12_000;
 
 type Step = "email" | "password" | "create" | "verify" | "reset";
 type AccountState = "new" | "verified" | "unverified";
-type Intent = "signin" | "signup";
 
 async function postVerification(email: string) {
   await apiFetch("/api/auth/send-verification-email", {
@@ -48,7 +47,6 @@ export function AccountForm() {
   const router = useRouter();
   const { refresh, beginRouteHome, cancelRouteHome } = useSession();
   const [step, setStep] = useState<Step>("email");
-  const [intent, setIntent] = useState<Intent>("signin");
   const [guide, setGuide] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [linkSent, setLinkSent] = useState(false);
@@ -84,16 +82,6 @@ export function AccountForm() {
     validation.clear();
   }
 
-  function choose(next: Intent) {
-    setIntent(next);
-    setGuide(null);
-    setError(null);
-    setMismatch(false);
-    setResetNotice(false);
-    validation.clear();
-    if (step !== "email") setStep("email");
-  }
-
   async function openVerify(sent: boolean) {
     setLinkSent(sent);
     setStep("verify");
@@ -119,13 +107,7 @@ export function AccountForm() {
         { cache: "no-store" },
       );
       if (result?.status === "verified") {
-        setIntent("signin");
         setStep("password");
-        if (intent === "signup") {
-          setGuide(
-            "An account already exists for that email. Enter your password to sign in.",
-          );
-        }
       } else if (result?.status === "unverified") {
         const waiting = await fetchCooldown(nextEmail);
         if (waiting > 0) {
@@ -150,11 +132,8 @@ export function AccountForm() {
         }
         setStep("verify");
       } else {
-        setIntent("signup");
         setStep("create");
-        if (intent === "signin") {
-          setGuide("No account yet for this email. Create one to continue.");
-        }
+        setGuide("No account yet for this email. Create one to continue.");
       }
     } catch (cause) {
       setError(cause);
@@ -272,7 +251,6 @@ export function AccountForm() {
   if (step === "verify") {
     return (
       <section className="account-panel" aria-label="Verify your email">
-        <Purpose intent={intent} busy={busy} onChoose={choose} />
         <h2>Check your email</h2>
         <KnownEmail email={email} onChange={changeEmail} />
         <p role="status">
@@ -339,7 +317,6 @@ export function AccountForm() {
   if (step === "reset") {
     return (
       <section className="account-panel" aria-label="Reset your password">
-        <Purpose intent={intent} busy={busy} onChoose={choose} />
         <h2>Reset your password</h2>
         {resetNotice ? (
           <p role="status">
@@ -384,7 +361,6 @@ export function AccountForm() {
 
   return (
     <section className="account-panel" aria-label="Account access">
-      <Purpose intent={intent} busy={busy} onChoose={choose} />
       <h2>
         {step === "email"
           ? "Sign in or create an account"
@@ -511,39 +487,6 @@ export function AccountForm() {
         />
       )}
     </section>
-  );
-}
-
-function Purpose({
-  intent,
-  busy,
-  onChoose,
-}: {
-  intent: Intent;
-  busy: boolean;
-  onChoose: (next: Intent) => void;
-}) {
-  return (
-    <div className="account-switch" role="group" aria-label="Account action">
-      <button
-        type="button"
-        className="account-tab"
-        aria-pressed={intent === "signin"}
-        disabled={busy}
-        onClick={() => onChoose("signin")}
-      >
-        Sign in
-      </button>
-      <button
-        type="button"
-        className="account-tab"
-        aria-pressed={intent === "signup"}
-        disabled={busy}
-        onClick={() => onChoose("signup")}
-      >
-        Create account
-      </button>
-    </div>
   );
 }
 

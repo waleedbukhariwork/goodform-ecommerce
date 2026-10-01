@@ -12,7 +12,8 @@
 ## Account steps — 2026-10-01
 
 - Status: shipped on staging in release `ddbceae`. No harness `verify` or `task finish`.
-- Sign in and Create account stay visible together. Both start with the same email step. A confirmed address continues to the password. A new address continues to create account, with the password entered twice. An unconfirmed address stays on the check-email step. Password reset still does not say whether the address is registered. The lookup is limited to 30 requests a minute per address source and returns only `new`, `verified`, or `unverified`.
+- The account page has one email step. Sign in and Create account are not separate tabs, because both used the same email form. A confirmed address continues to the password. A new address continues to create account, with the password entered twice. An unconfirmed address stays on the check-email step. Password reset still does not say whether the address is registered. The lookup is limited to 30 requests a minute per address source and returns only `new`, `verified`, or `unverified`.
+- The duplicate tabs are removed locally and are still on staging release `ddbceae` until the next deploy.
 - Creating an account sends the first verification link, then the button reads Resend link. Continuing with an unconfirmed address sends that link immediately and opens the same screen with Resend link. A link already sent in the last minute is not sent again; the button waits out the remaining seconds. Send link remains only when that automatic send fails.
 
 ## Object bench interface — 2026-10-01
