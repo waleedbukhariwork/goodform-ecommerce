@@ -12,6 +12,7 @@ const MAIL_COOLDOWN_SECONDS = 60;
 const VERIFIED_PATH = "/email-verified";
 /** Mail delivery is bounded at 8s on the server; keep the browser request open past that. */
 const MAIL_REQUEST_TIMEOUT_MS = 12_000;
+const STORAGE_KEY = "accountEmail";
 
 type Step = "email" | "password" | "create" | "verify" | "reset";
 type AccountState = "new" | "verified" | "unverified";
@@ -71,8 +72,13 @@ export function AccountForm() {
     );
     return () => window.clearInterval(timer);
   }, [cooldown > 0]);
+  useEffect(() => {
+    const savedEmail = sessionStorage.getItem(STORAGE_KEY);
+    if (savedEmail) void restoreState(savedEmail);
+  }, []);
 
   function changeEmail() {
+    sessionStorage.removeItem(STORAGE_KEY);
     setStep("email");
     setGuide(null);
     setError(null);
@@ -101,6 +107,7 @@ export function AccountForm() {
       .trim()
       .toLowerCase();
     setEmail(nextEmail);
+    sessionStorage.setItem(STORAGE_KEY, nextEmail);
     try {
       const result = await apiFetch<{ status: AccountState }>(
         `/api/v1/auth/account-state?email=${encodeURIComponent(nextEmail)}`,
@@ -137,6 +144,36 @@ export function AccountForm() {
       }
     } catch (cause) {
       setError(cause);
+    } finally {
+      setBusy(false);
+      setSlow(false);
+    }
+  }
+
+  async function restoreState(savedEmail: string) {
+    setEmail(savedEmail);
+    setError(null);
+    setGuide(null);
+    setBusy(true);
+    setSlow(false);
+    try {
+      const result = await apiFetch<{ status: AccountState }>(
+        `/api/v1/auth/account-state?email=${encodeURIComponent(savedEmail)}`,
+        { cache: "no-store" },
+      );
+      if (result?.status === "verified") {
+        setStep("password");
+      } else if (result?.status === "unverified") {
+        const waiting = await fetchCooldown(savedEmail);
+        setLinkSent(true);
+        setStep("verify");
+        setCooldown(waiting);
+      } else {
+        setStep("create");
+        setGuide("No account yet for this email. Create one to continue.");
+      }
+    } catch {
+      // Stay on the email step; the saved email remains in the input.
     } finally {
       setBusy(false);
       setSlow(false);
